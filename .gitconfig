@@ -1,0 +1,16 @@
+[user]
+	name = Adriano Bacha
+	email = abacha@gmail.com
+[color]
+	ui = auto
+[github]
+	user = abacha
+	token = 141ac5143d7fc424a203f514e10dc40d
+[dude]
+	interval = 60
+[alias]
+	hist = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\"
+	s = status
+	amend = commit --amend
+	a = add
+  co = checkout
