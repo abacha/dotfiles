@@ -4,8 +4,8 @@
 [color]
 	ui = auto
 [github]
-	user = abacha
-	token = 141ac5143d7fc424a203f514e10dc40d
+	user = johndoe
+	token = 666
 [dude]
 	interval = 60
 [alias]
