@@ -42,3 +42,8 @@ export TERM="xterm-256color"
 if [ "$(tty)" = "/dev/tty1" -o "$(tty)" = "/dev/vc/1" ] ; then
   startxfce4
 fi
+
+# zsh
+alias vim="stty stop '' -ixoff ; vim"
+# `Frozing' tty, so after any command terminal settings will be restored
+ttyctl -f

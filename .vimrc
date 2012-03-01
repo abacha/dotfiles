@@ -8,24 +8,7 @@ call pathogen#infect()
 
 let g:netrw_home="~/.vim/backup"
 
-let g:fuf_dataDir = '~/.vim/backup/.vim-fuf-data'
-
-"let g:ColorV_cache_File="~/.vim/backup/.vim_ColorV_cache"
-
-" if has("autocmd")
-"   autocmd BufWritePost .vimrc source $MYVIMRC
-" endif
 nmap <leader>v :tabedit $MYVIMRC<CR>
-
-let g:statusline_fugitive=1
-let g:statusline_rvm=0
-let g:statusline_syntastic=0
-let g:statusline_fullpath=0
-
-let g:fuf_modesDisable=['mrucmd']
-nnoremap <leader>ff :FufFile<CR>
-nnoremap <leader>fm :FufMruFile<CR>
-nnoremap <leader>fb :FufBuffer<CR>
 
 let g:indent_guides_auto_colors=1
 let g:indent_guides_enable_on_vim_startup=0
@@ -103,10 +86,7 @@ nmap <silent> <leader>s :set spell!<CR>
 set backupdir=~/.vim/backup,~/tmp,/var/tmp,/tmp
 set directory=~/.vim/backup,~/tmp,/var/tmp,/tmp
 
-nmap <D-[> <<
-nmap <D-]> >>
-vmap <D-[> <gv
-vmap <D-]> >gv
+nnoremap <silent> <C-S> :if expand("%") == ""<CR>browse confirm w<CR>else<CR>confirm w<CR>endif<CR>
 
 cnoremap %% <C-R>=expand("%:h")."/"<CR>
 map <leader>ee :e %%
@@ -117,9 +97,6 @@ map <leader>ea :b#<CR>
 
 set completeopt=menu,menuone,longest
 set pumheight=10
-let g:SuperTabDefaultCompletionType="context"
-let g:clang_complete_auto=0
-let g:clang_complete_copen=1
 
 set wildignore+=*/.hg/*,*/.svn/*
 set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
@@ -134,6 +111,6 @@ set cc=+1
 set relativenumber
 nmap <leader>w :w<cr>\|:!ruby %<cr>
 vmap <C-C> "*y
-nmap <leader>r :exec &nu==0 ? "se number" : "se relativenumber"<cr>
+nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 command! Trail execute "%s/ *$//g"
-au CursorHold * checktime
+autocmd CursorHold * checktime
