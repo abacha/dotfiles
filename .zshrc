@@ -39,10 +39,6 @@ export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bi
 
 export TERM="xterm-256color"
 
-if [ "$(tty)" = "/dev/tty1" -o "$(tty)" = "/dev/vc/1" ] ; then
-  startxfce4
-fi
-
 # fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"
 ttyctl -f

@@ -117,9 +117,9 @@ nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 command! Trail execute "%s/ *$//g"
 autocmd CursorHold * checktime
 
-set winwidth=84
-set winheight=10
-set winminheight=10
-set winheight=999
+" set winwidth=84
+" set winheight=10
+" set winminheight=10
+" set winheight=999
 
 set relativenumber
