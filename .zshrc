@@ -26,16 +26,16 @@ ZSH_THEME="duke"
 # Uncomment following line if you want red dots to be displayed while waiting for completion
 # COMPLETION_WAITING_DOTS="true"
 
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-plugins=(git lol)
+# PLUGINS
+plugins=(git lol archlinux)
 
 source $ZSH/oh-my-zsh.sh
 
 # Customize to your needs...
 export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+[[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
+
 
 export TERM="xterm-256color"
 
@@ -43,7 +43,19 @@ if [ "$(tty)" = "/dev/tty1" -o "$(tty)" = "/dev/vc/1" ] ; then
   startxfce4
 fi
 
-# zsh
+# fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"
-# `Frozing' tty, so after any command terminal settings will be restored
 ttyctl -f
+
+bindkey -v
+bindkey '^r' history-incremental-search-backward
+
+# attach || start tmux
+# if which tmux 2>&1 > /dev/null; then
+#   if test -z ${TMUX}; then
+#     tmux
+#   fi
+#   while test -z ${TMUX}; do
+#     tmux attach || break
+#   done
+# fi

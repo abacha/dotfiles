@@ -17,9 +17,9 @@ let g:indent_guides_guide_size=0
 noremap <leader>i :IndentGuidesToggle<CR>
 
 if &t_Co > 2 || has("gui_running")
-  syntax enable
-  set hlsearch
-  nmap <silent> <leader>h :silent :nohlsearch<CR>
+syntax enable
+set hlsearch
+nmap <silent> <leader>h :silent :nohlsearch<CR>
 endif
 
 set background=dark
@@ -101,16 +101,25 @@ set pumheight=10
 set wildignore+=*/.hg/*,*/.svn/*
 set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
 set wildignore+=.gitkeep,.DS_Store
+
 let g:ctrlp_custom_ignore='\.git$'
 
 let g:gist_open_browser_after_post = 1
 let g:gist_detect_filetype = 1
 let g:gist_clip_command = 'xclip -selection clipboard'
+let g:github_token = '141ac5143d7fc424a203f514e10dc40d'
 
 set cc=+1
-set relativenumber
 nmap <leader>w :w<cr>\|:!ruby %<cr>
+nmap <C-B> :CtrlPBuffer<cr>
 vmap <C-C> "*y
 nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 command! Trail execute "%s/ *$//g"
 autocmd CursorHold * checktime
+
+set winwidth=84
+set winheight=10
+set winminheight=10
+set winheight=999
+
+set relativenumber
