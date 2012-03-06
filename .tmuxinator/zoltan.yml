@@ -1,0 +1,17 @@
+# ~/.tmuxinator/zoltan.yml
+# you can make as many tabs as you wish...
+
+project_name: zoltan
+project_root: ~/projects/ruby/zoltan/
+tabs:
+  - server:
+      layout: main-vertical
+      panes:
+        - cd ../zoltan_frontend/
+        - #empty
+        - #empty
+        - #empty
+  - editor: vim
+  - frontend:
+      - cd ../zoltan_frontend/
+      - vim
