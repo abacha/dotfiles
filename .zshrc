@@ -35,9 +35,10 @@ source $ZSH/oh-my-zsh.sh
 export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 [[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
+export PAGER=most
+export MANPAGER=most
+export TERM=xterm-256color
 
-
-export TERM="xterm-256color"
 
 # fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"

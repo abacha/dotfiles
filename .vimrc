@@ -22,6 +22,8 @@ set hlsearch
 nmap <silent> <leader>h :silent :nohlsearch<CR>
 endif
 
+" Colors
+set t_Co=256
 set background=dark
 colorscheme solarized
 let g:solarized_contrast="low"
@@ -94,6 +96,8 @@ map <leader>es :sp %%
 map <leader>ev :vsp %%
 map <leader>et :tabedit %%
 map <leader>ea :b#<CR>
+map <C-W>\ :vsp<CR>
+map <C-W>- :sp<CR>
 
 set completeopt=menu,menuone,longest
 set pumheight=10
@@ -104,6 +108,7 @@ set wildignore+=.gitkeep,.DS_Store
 
 let g:ctrlp_custom_ignore='\.git$'
 
+" Gist plugin
 let g:gist_open_browser_after_post = 1
 let g:gist_detect_filetype = 1
 let g:gist_clip_command = 'xclip -selection clipboard'
@@ -114,12 +119,29 @@ nmap <leader>w :w<cr>\|:!ruby %<cr>
 nmap <C-B> :CtrlPBuffer<cr>
 vmap <C-C> "*y
 nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
+
+" Trail whitespaces
 command! Trail execute "%s/ *$//g"
+
 autocmd CursorHold * checktime
+
+" Move around splits with <c-hjkl>
+nnoremap <c-j> <c-w>j
+nnoremap <c-k> <c-w>k
+nnoremap <c-h> <c-w>h
+nnoremap <c-l> <c-w>l
 
 " set winwidth=84
 " set winheight=10
 " set winminheight=10
 " set winheight=999
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" ARROW KEYS ARE UNACCEPTABLE
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map <Left> :echo "no!"<cr>
+map <Right> :echo "no!"<cr>
+map <Up> :echo "no!"<cr>
+map <Down> :echo "no!"<cr>
 
 set relativenumber
