@@ -1,0 +1,105 @@
+[submodule "bundle/tpope_vim-pathogen"]
+	path = bundle/tpope_vim-pathogen
+	url = https://github.com/tpope/vim-pathogen.git
+[submodule "bundle/tpope_vim-fugitive"]
+	path = bundle/tpope_vim-fugitive
+	url = https://github.com/tpope/vim-fugitive.git
+[submodule "bundle/tpope_vim-git"]
+	path = bundle/tpope_vim-git
+	url = https://github.com/tpope/vim-git.git
+[submodule "bundle/tpope_vim-unimpaired"]
+	path = bundle/tpope_vim-unimpaired
+	url = https://github.com/tpope/vim-unimpaired.git
+[submodule "bundle/tpope_vim-surround"]
+	path = bundle/tpope_vim-surround
+	url = https://github.com/tpope/vim-surround.git
+[submodule "bundle/tpope_vim-repeat"]
+	path = bundle/tpope_vim-repeat
+	url = https://github.com/tpope/vim-repeat.git
+[submodule "bundle/tpope_vim-endwise"]
+	path = bundle/tpope_vim-endwise
+	url = https://github.com/tpope/vim-endwise.git
+[submodule "bundle/tpope_vim-rails"]
+	path = bundle/tpope_vim-rails
+	url = https://github.com/tpope/vim-rails.git
+[submodule "bundle/tpope_vim-rake"]
+	path = bundle/tpope_vim-rake
+	url = https://github.com/tpope/vim-rake.git
+[submodule "bundle/tpope_vim-bundler"]
+	path = bundle/tpope_vim-bundler
+	url = https://github.com/tpope/vim-bundler.git
+[submodule "bundle/tpope_vim-haml"]
+	path = bundle/tpope_vim-haml
+	url = https://github.com/tpope/vim-haml.git
+[submodule "bundle/tpope_vim-markdown"]
+	path = bundle/tpope_vim-markdown
+	url = https://github.com/tpope/vim-markdown.git
+[submodule "bundle/altercation_vim-colors-solarized"]
+	path = bundle/altercation_vim-colors-solarized
+	url = https://github.com/altercation/vim-colors-solarized.git
+[submodule "bundle/tomtom_tcomment_vim"]
+	path = bundle/tomtom_tcomment_vim
+	url = https://github.com/tomtom/tcomment_vim.git
+[submodule "bundle/vim-ruby_vim-ruby"]
+	path = bundle/vim-ruby_vim-ruby
+	url = https://github.com/vim-ruby/vim-ruby.git
+[submodule "bundle/mileszs_ack.vim"]
+	path = bundle/mileszs_ack.vim
+	url = https://github.com/mileszs/ack.vim.git
+[submodule "bundle/Lokaltog_vim-easymotion"]
+	path = bundle/Lokaltog_vim-easymotion
+	url = https://github.com/Lokaltog/vim-easymotion.git
+[submodule "bundle/mutewinter_vim-indent-guides"]
+	path = bundle/mutewinter_vim-indent-guides
+	url = https://github.com/mutewinter/vim-indent-guides.git
+[submodule "bundle/Rykka_ColorV"]
+	path = bundle/Rykka_ColorV
+	url = https://github.com/Rykka/ColorV.git
+[submodule "bundle/pangloss_vim-javascript"]
+	path = bundle/pangloss_vim-javascript
+	url = https://github.com/pangloss/vim-javascript.git
+[submodule "bundle/itspriddle_vim-jquery"]
+	path = bundle/itspriddle_vim-jquery
+	url = https://github.com/itspriddle/vim-jquery.git
+[submodule "bundle/vim-scripts_ZoomWin"]
+	path = bundle/vim-scripts_ZoomWin
+	url = https://github.com/vim-scripts/ZoomWin.git
+[submodule "bundle/kien_ctrlp.vim"]
+	path = bundle/kien_ctrlp.vim
+	url = https://github.com/kien/ctrlp.vim.git
+[submodule "bundle/skwp_vim-rspec"]
+	path = bundle/skwp_vim-rspec
+	url = https://github.com/skwp/vim-rspec.git
+[submodule "bundle/vim-scripts_csv.vim"]
+	path = bundle/vim-scripts_csv.vim
+	url = https://github.com/vim-scripts/csv.vim.git
+[submodule "bundle/edsono_vim-matchit"]
+	path = bundle/edsono_vim-matchit
+	url = https://github.com/edsono/vim-matchit.git
+[submodule "bundle/ap_vim-css-color"]
+	path = bundle/ap_vim-css-color
+	url = https://github.com/ap/vim-css-color.git
+[submodule "bundle/garbas_vim-snipmate"]
+	path = bundle/garbas_vim-snipmate
+	url = https://github.com/garbas/vim-snipmate.git
+[submodule "bundle/tomtom_tlib_vim"]
+	path = bundle/tomtom_tlib_vim
+	url = https://github.com/tomtom/tlib_vim.git
+[submodule "bundle/MarcWeber_vim-addon-mw-utils"]
+	path = bundle/MarcWeber_vim-addon-mw-utils
+	url = https://github.com/MarcWeber/vim-addon-mw-utils.git
+[submodule "bundle/honza_snipmate-snippets"]
+	path = bundle/honza_snipmate-snippets
+	url = https://github.com/honza/snipmate-snippets.git
+[submodule "bundle/vim-scripts_FuzzyFinder"]
+	path = bundle/vim-scripts_FuzzyFinder
+	url = https://github.com/vim-scripts/FuzzyFinder.git
+[submodule "bundle/vim-scripts_L9"]
+	path = bundle/vim-scripts_L9
+	url = https://github.com/vim-scripts/L9.git
+[submodule "bundle/gist-vim"]
+	path = bundle/gist-vim
+	url = https://github.com/mattn/gist-vim.git
+[submodule "bundle/ervandew_supertab"]
+  path = bundle/ervandew_supertab
+  url = https://github.com/ervandew/supertab.git
