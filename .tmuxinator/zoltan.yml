@@ -7,11 +7,13 @@ tabs:
   - server:
       layout: main-vertical
       panes:
-        - cd ../zoltan_frontend/
         - #empty
         - #empty
         - #empty
   - editor: vim
   - frontend:
-      - cd ../zoltan_frontend/
-      - vim
+      layout: main-horizontal
+      panes:
+        - cd ../zoltan_frontend/ && vim
+        - cd ../zoltan_frontend/
+  - mysql: #empty
