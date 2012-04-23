@@ -12,6 +12,7 @@ call pathogen#infect()
 
 let g:netrw_home="~/.vim/backup"
 
+" Open vimrc with <leader>v
 nmap <leader>v :tabedit $MYVIMRC<CR>
 
 let g:indent_guides_auto_colors=1
@@ -107,10 +108,21 @@ nmap <leader>w :w<cr>\|:!ruby %<cr>
 vmap <C-C> "*y
 nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 
+" Paste toggle with <leader>p
+set pastetoggle=<leader>p
+
 " Trail whitespaces
 command! Trail execute "%s/ *$//g"
 
+" Switch buffers with <leader>ea
+map <leader>ea :b#<CR>
+
+" Save/quit typos
+cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq
+
 autocmd CursorHold * checktime
+" Exit insert mode with "jj"
+imap jj <esc>
 
 " Keep line index when reopening a file
 autocmd BufReadPost *
