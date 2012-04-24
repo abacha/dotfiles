@@ -1,5 +1,7 @@
 set nocompatible
 let mapleader=","
+runtime bundle/tpope_vim-pathogen/autoload/pathogen.vim
+call pathogen#infect()
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " ENCODING
@@ -7,13 +9,12 @@ let mapleader=","
 set encoding=utf-8
 set fileencoding=utf-8
 
-runtime bundle/tpope_vim-pathogen/autoload/pathogen.vim
-call pathogen#infect()
 
 let g:netrw_home="~/.vim/backup"
 
 " Open vimrc with <leader>v
 nmap <leader>v :tabedit $MYVIMRC<CR>
+nmap <leader>sv :source $MYVIMRC<cr>
 
 let g:indent_guides_auto_colors=1
 let g:indent_guides_enable_on_vim_startup=0
@@ -33,33 +34,38 @@ endif
 set t_Co=256
 set background=dark
 colorscheme solarized
-let g:solarized_contrast="low"
+"let g:solarized_contrast="low"
 
 filetype on
 filetype plugin on
 filetype indent on
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" ARROW KEYS ARE UNACCEPTABLE
+" UNBIND KEYS ARE UNACCEPTABLE
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <Left> :echo "no!"<cr>
-map <Right> :echo "no!"<cr>
-map <Up> :echo "no!"<cr>
-map <Down> :echo "no!"<cr>
+map <Left> <nop>
+map <Right> <nop>
+map <Up> <nop>
+map <Down> <nop>
+inoremap <esc> <nop>
 
-set relativenumber
+" Tab spacing/sice
 set tabstop=2
 set shiftwidth=2
 set softtabstop=2
 set expandtab
 set smarttab
+
 set backspace=indent,eol,start
 set listchars=tab:▸\ ,eol:¬,trail:·,precedes:«,extends:»
 set textwidth=80
 set linebreak
 set showbreak=…
-set sidescroll=5
-set scrolloff=5
+
+" Screen offset
+set sidescroll=8
+set scrolloff=8
+
 set formatprg=par\ -TbgqRw80
 set autoindent
 set smartindent
@@ -69,7 +75,10 @@ set incsearch
 set showmatch
 set matchtime=2
 set ruler
+
+" Show line number
 set number
+
 set autoread
 set wildmenu
 set wildmode=list:longest
@@ -87,7 +96,7 @@ set backupdir=~/.vim/backup,~/tmp,/var/tmp,/tmp
 set directory=~/.vim/backup,~/tmp,/var/tmp,/tmp
 
 " Use c-s to save current file
-nnoremap <silent> <C-S> :if expand("%") == ""<CR>browse confirm w<CR>else<CR>confirm w<CR>endif<CR>
+nnoremap <silent> <C-S> :if expand("%") == ""<CR>browse confirm w<CR>else<CR>confirm w<CR>endif<CR><CR>
 
 cnoremap %% <C-R>=expand("%:h")."/"<CR>
 
@@ -106,6 +115,8 @@ nmap <leader>w :w<cr>\|:!ruby %<cr>
 
 " Copy with <C-C>
 vmap <C-C> "*y
+
+" Toggle absolute/relative line number
 nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 
 " Paste toggle with <leader>p
@@ -121,8 +132,9 @@ map <leader>ea :b#<CR>
 cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq
 
 autocmd CursorHold * checktime
-" Exit insert mode with "jj"
-imap jj <esc>
+
+" Exit insert mode with jj
+inoremap jj <esc>
 
 " Keep line index when reopening a file
 autocmd BufReadPost *
@@ -137,14 +149,27 @@ nnoremap <c-h> <c-w>h
 nnoremap <c-l> <c-w>l
 
 " Split screen using \ for vertical and - for horizontal
-map <C-W>\ :vsp<CR>
-map <C-W>- :sp<CR>
+noremap <C-W>\ :vsp<CR>
+noremap <C-W>- :sp<CR>
 
+" Folding
+nnoremap <space> za
+
+" Sudo to write
+cnoremap w!! w !sudo tee % >/dev/null
+
+" Toggle invisible characters
 map <leader>l :set list!<CR>
 " set winwidth=84
 " set winheight=10
 " set winminheight=10
 " set winheight=999
+
+" Surround word with separators
+nnoremap <leader>" viw<esc>a"<esc>hbi"<esc>lel
+nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
+nnoremap <leader>( viw<esc>a(<esc>hbi)<esc>lel
+nnoremap <leader>[ viw<esc>a[<esc>hbi]<esc>lel
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PLUGINS
@@ -152,6 +177,7 @@ map <leader>l :set list!<CR>
 
 " Open buffer with <C-B>
 nmap <C-B> :CtrlPBuffer<cr>
+
 " Ignore git files on CtrlP
 let g:ctrlp_custom_ignore='\.git$'
 
