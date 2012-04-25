@@ -1,11 +1,12 @@
----
-:backtrace: false
-:benchmark: false
+--- 
 :bulk_threshold: 1000
-:sources:
+gem: --no-ri --no-rdoc
+:update_sources: true
+:backtrace: false
+:sources: 
 - http://rubygems.org/
 - http://stvx:sj84i0g4@stickler.vonix.com.br
 - http://gems.github.com
-:update_sources: true
+- http://stvx:sj84i0g4@stickler.vonix.com.br
 :verbose: true
-gem: --no-ri --no-rdoc
+:benchmark: false

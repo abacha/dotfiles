@@ -29,6 +29,14 @@ if &t_Co > 2 || has("gui_running")
 endif
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" FOLDING
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set foldmethod=indent
+set foldnestmax=10
+set nofoldenable
+set foldlevel=1
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " COLORS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set t_Co=256
@@ -75,10 +83,7 @@ set incsearch
 set showmatch
 set matchtime=2
 set ruler
-
-" Show line number
-set number
-
+set number "show line number
 set autoread
 set wildmenu
 set wildmode=list:longest
@@ -86,7 +91,7 @@ set shortmess=atI
 set timeoutlen=500
 set wrap
 set wrapmargin=80
-set visualbell
+set visualbell "no crazy beeping
 set hidden
 set title
 set cc=+1

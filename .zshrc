@@ -45,6 +45,7 @@ export TERM=xterm-256color
 
 
 # fixing suspend/resume on vim
+alias v="stty stop '' -ixoff ; vim --servername VIM --remote-silent"
 alias vim="stty stop '' -ixoff ; vim"
 ttyctl -f
 
