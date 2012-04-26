@@ -1,14 +1,13 @@
 set nocompatible
-let mapleader=","
-runtime bundle/tpope_vim-pathogen/autoload/pathogen.vim
-call pathogen#infect()
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " ENCODING
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set encoding=utf-8
 set fileencoding=utf-8
 
+let mapleader=","
+runtime bundle/tpope_vim-pathogen/autoload/pathogen.vim
+call pathogen#infect()
 
 let g:netrw_home="~/.vim/backup"
 
@@ -49,12 +48,12 @@ filetype plugin on
 filetype indent on
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" UNBIND KEYS ARE UNACCEPTABLE
+" UNBIND KEYS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <Left> <nop>
-map <Right> <nop>
-map <Up> <nop>
-map <Down> <nop>
+nnoremap <Left> <nop>
+nnoremap <Right> <nop>
+nnoremap <Up> <nop>
+nnoremap <Down> <nop>
 inoremap <esc> <nop>
 
 " Tab spacing/sice
@@ -112,8 +111,8 @@ set wildignore+=*/.hg/*,*/.svn/*
 set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
 set wildignore+=.gitkeep,.DS_Store
 
-" Hash rocket with <c-l>
-imap <c-l> <space>=><space>
+" Hash rocket with <C-l>
+imap <C-l> <space>=><space>
 
 " Ruby exec current file with <leader> w
 nmap <leader>w :w<cr>\|:!ruby %<cr>
@@ -147,15 +146,17 @@ autocmd BufReadPost *
   \   exe "normal g`\"" |
   \ endif
 
-" Move around splits with <c-hjkl>
-nnoremap <c-j> <c-w>j
-nnoremap <c-k> <c-w>k
-nnoremap <c-h> <c-w>h
-nnoremap <c-l> <c-w>l
-
 " Split screen using \ for vertical and - for horizontal
-noremap <C-W>\ :vsp<CR>
-noremap <C-W>- :sp<CR>
+noremap <C-\> :vsp<CR>
+noremap <C--> :sp<CR>
+
+" Move around splits with <C-hjkl>
+noremap <C-j> <C-w>j
+noremap <C-k> <C-w>k
+noremap <C-h> <C-w>h
+noremap <C-l> <C-w>l
+noremap <C-q> <C-w>q
+
 
 " Folding
 nnoremap <space> za
@@ -165,6 +166,7 @@ cnoremap w!! w !sudo tee % >/dev/null
 
 " Toggle invisible characters
 map <leader>l :set list!<CR>
+
 " set winwidth=84
 " set winheight=10
 " set winminheight=10
@@ -190,4 +192,4 @@ let g:ctrlp_custom_ignore='\.git$'
 let g:gist_open_browser_after_post = 1
 let g:gist_detect_filetype = 1
 let g:gist_clip_command = 'xclip -selection clipboard'
-let g:github_token = '141ac5143d7fc424a203f514e10dc40d'
+let g:github_token = $GITHUB_TOKEN

@@ -44,9 +44,11 @@ export MANPAGER=most
 export TERM=xterm-256color
 
 
+
 # fixing suspend/resume on vim
 alias v="stty stop '' -ixoff ; vim --servername VIM --remote-silent"
-alias vim="stty stop '' -ixoff ; vim"
+alias vim="stty stop '' -ixoff ; vim --servername VIM"
+export GITHUB_TOKEN="141ac5143d7fc424a203f514e10dc40d"
 ttyctl -f
 
 bindkey -v
