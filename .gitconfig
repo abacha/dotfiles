@@ -1,0 +1,31 @@
+[user]
+	name = Adriano Bacha
+	email = abacha@gmail.com
+[color]
+	ui = auto
+[github]
+	user = abacha
+	token = $GITHUB_TOKEN
+[merge]
+  tool = vim
+[diff]
+  tool = vimdiff
+[dude]
+	interval = 60
+[alias]
+  hist = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  st = status
+  s = status -s
+  amend = commit --amend
+  a = add
+  co = checkout
+  ci = commit -m
+  dc = diff --cached
+  di = diff
+  b = branch
+  ap = add --patch
+  sm = submodule
+  rb = rebase
+  l = log --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+[push]
+	default = matching

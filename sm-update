@@ -1,0 +1,12 @@
+#!/bin/zsh
+root=$1
+cd $root
+for dir in $(ls)
+  do
+    echo "Updating $dir"
+    cd $dir
+    echo "pwd: $PWD"
+    git checkout master
+    git pull -u origin master
+    cd $root
+  done

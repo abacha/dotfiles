@@ -1,4 +1,5 @@
-set nocompatible
+set nocompatible "use vim defaults
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " ENCODING
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -6,20 +7,47 @@ set encoding=utf-8
 set fileencoding=utf-8
 
 let mapleader=","
-runtime bundle/tpope_vim-pathogen/autoload/pathogen.vim
-call pathogen#infect()
+
+" let Vundle manage Vundle
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
+Bundle 'gmarik/vundle'
+
+" Bundles
+Bundle 'Valloric/YouCompleteMe'
+Bundle 'altercation/vim-colors-solarized'
+Bundle 'kchmck/vim-coffee-script'
+Bundle 'rizzatti/ctrlp.vim'
+Bundle 'majutsushi/tagbar'
+Bundle 'mattn/gist-vim'
+Bundle 'mattn/webapi-vim'
+Bundle 'rizzatti/funcoo.vim'
+Bundle 'rizzatti/greper.vim'
+Bundle 'nathanaelkane/vim-indent-guides'
+Bundle 'sjl/gundo.vim'
+Bundle 'tpope/vim-commentary'
+Bundle 'tpope/vim-endwise'
+Bundle 'tpope/vim-fugitive'
+Bundle 'tpope/vim-git'
+Bundle 'tpope/vim-haml'
+Bundle 'tpope/vim-rails'
+Bundle 'tpope/vim-eunuch'
+Bundle 'tpope/vim-tbone'
+Bundle 'airblade/vim-gitgutter'
+Bundle 'scrooloose/nerdtree'
+Bundle 'Lokaltog/powerline'
 
 let g:netrw_home="~/.vim/backup"
 
 " Open vimrc with <leader>v
-nmap <leader>v :tabedit $MYVIMRC<CR>
+nmap <leader>v :edit $MYVIMRC<CR>
 nmap <leader>sv :source $MYVIMRC<cr>
 
 let g:indent_guides_auto_colors=1
 let g:indent_guides_enable_on_vim_startup=0
 let g:indent_guides_color_change_percent=3
 let g:indent_guides_guide_size=0
-noremap <leader>i :IndentGuidesToggle<CR>
+noremap <leader>ig :IndentGuidesToggle<CR>
 
 if &t_Co > 2 || has("gui_running")
   syntax enable
@@ -34,6 +62,9 @@ set foldmethod=indent
 set foldnestmax=10
 set nofoldenable
 set foldlevel=1
+autocmd InsertEnter * if !exists('w:last_fdm') | let w:last_fdm=&foldmethod | setlocal foldmethod=manual | endif
+autocmd InsertLeave,WinLeave * if exists('w:last_fdm') | let &l:foldmethod=w:last_fdm | unlet w:last_fdm | endif
+nnoremap <space> za
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " COLORS
@@ -41,7 +72,6 @@ set foldlevel=1
 set t_Co=256
 set background=dark
 colorscheme solarized
-"let g:solarized_contrast="low"
 
 filetype on
 filetype plugin on
@@ -50,17 +80,16 @@ filetype indent on
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " UNBIND KEYS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <Left> <nop>
-nnoremap <Right> <nop>
-nnoremap <Up> <nop>
-nnoremap <Down> <nop>
-inoremap <esc> <nop>
+"nnoremap <Left> <nop>
+"nnoremap <Right> <nop>
+"nnoremap <Up> <nop>
+"nnoremap <Down> <nop>
 
-" Tab spacing/sice
-set tabstop=2
-set shiftwidth=2
+" Tab spacing/size
+set tabstop=2 "number of spaces on tab
+set shiftwidth=2 "number of spaces to ident
 set softtabstop=2
-set expandtab
+set expandtab "convert tabs to spaces
 set smarttab
 
 set backspace=indent,eol,start
@@ -76,13 +105,13 @@ set scrolloff=8
 set formatprg=par\ -TbgqRw80
 set autoindent
 set smartindent
-set ignorecase
+set ignorecase "ignore case when searching
 set smartcase
 set incsearch
 set showmatch
 set matchtime=2
-set ruler
-set number "show line number
+set ruler "show cursor pos on status bar
+set relativenumber "show line number
 set autoread
 set wildmenu
 set wildmode=list:longest
@@ -99,10 +128,20 @@ command! -nargs=* Wrap set wrap linebreak nolist
 set backupdir=~/.vim/backup,~/tmp,/var/tmp,/tmp
 set directory=~/.vim/backup,~/tmp,/var/tmp,/tmp
 
-" Use c-s to save current file
-nnoremap <silent> <C-S> :if expand("%") == ""<CR>browse confirm w<CR>else<CR>confirm w<CR>endif<CR><CR>
-
+" %% as current dir
 cnoremap %% <C-R>=expand("%:h")."/"<CR>
+
+cnoremap cb 1,100bdelete
+"
+" %f as current file
+cnoremap %f <C-R>=expand("%")<CR>
+
+" Clear the search buffer when hitting return
+function! MapCR()
+  nnoremap <cr> :nohlsearch<cr>:redraw!<cr>
+endfunction
+call MapCR()
+nnoremap <leader><leader> ^
 
 set completeopt=menu,menuone,longest
 set pumheight=10
@@ -111,33 +150,24 @@ set wildignore+=*/.hg/*,*/.svn/*
 set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
 set wildignore+=.gitkeep,.DS_Store
 
-" Hash rocket with <C-l>
-imap <C-l> <space>=><space>
-
-" Ruby exec current file with <leader> w
-nmap <leader>w :w<cr>\|:!ruby %<cr>
-
-" Copy with <C-C>
-vmap <C-C> "*y
-
 " Toggle absolute/relative line number
-nmap <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
+map <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 
-" Paste toggle with <leader>p
+" Toggle paste mode with <leader>p
 set pastetoggle=<leader>p
-
-" Trail whitespaces
-command! Trail execute "%s/ *$//g"
+function! PasteCB()
+  set paste
+  set nopaste
+endfunction
 
 " Switch buffers with <leader>ea
 map <leader>ea :b#<CR>
 
 " Save/quit typos
-cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq
+cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq| cab Bd bd| cab Wa wa| cab WA wa
 
 autocmd CursorHold * checktime
 
-" Exit insert mode with jj
 inoremap jj <esc>
 
 " Keep line index when reopening a file
@@ -146,26 +176,15 @@ autocmd BufReadPost *
   \   exe "normal g`\"" |
   \ endif
 
-" Split screen using \ for vertical and - for horizontal
-noremap <C-\> :vsp<CR>
-noremap <C--> :sp<CR>
-
-" Move around splits with <C-hjkl>
-noremap <C-j> <C-w>j
-noremap <C-k> <C-w>k
-noremap <C-h> <C-w>h
-noremap <C-l> <C-w>l
-noremap <C-q> <C-w>q
-
-
-" Folding
-nnoremap <space> za
-
 " Sudo to write
 cnoremap w!! w !sudo tee % >/dev/null
 
 " Toggle invisible characters
 map <leader>l :set list!<CR>
+
+imap <c-l> <space>=><space>
+map <leader>e :edit %%
+
 
 " set winwidth=84
 " set winheight=10
@@ -178,18 +197,176 @@ nnoremap <leader>' viw<esc>a'<esc>hbi'<esc>lel
 nnoremap <leader>( viw<esc>a(<esc>hbi)<esc>lel
 nnoremap <leader>[ viw<esc>a[<esc>hbi]<esc>lel
 
+"""""""""""""""""""""""
+" WINDOW MANAGEMENT   "
+"""""""""""""""""""""""
+
+" Split
+noremap <C-\> :vsp<CR>
+noremap <C--> :sp<CR>
+
+" Resize
+noremap <Up> <C-w>+
+noremap <Down> <C-w>-
+noremap <Left> <C-w>>
+noremap <Right> <C-w><
+
+" Move around
+noremap <C-j> <C-w>j
+noremap <C-k> <C-w>k
+noremap <C-h> <C-w>h
+noremap <C-l> <C-w>l
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" FUNCTIONS
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+function! OpenTestAlternate()
+  let new_file = AlternateForCurrentFile()
+  exec ':vsp ' . new_file
+endfunction
+function! AlternateForCurrentFile()
+  let current_file = expand("%")
+  let new_file = current_file
+  let in_spec = match(current_file, '^spec/') != -1
+  let going_to_spec = !in_spec
+  let in_app = match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<helpers\>') != -1
+  if going_to_spec
+    if in_app
+      let new_file = substitute(new_file, '^app/', '', '')
+    end
+    let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
+    let new_file = 'spec/' . new_file
+  else
+    let new_file = substitute(new_file, '_spec\.rb$', '.rb', '')
+    let new_file = substitute(new_file, '^spec/', '', '')
+    if in_app
+      let new_file = 'app/' . new_file
+    end
+  endif
+  return new_file
+endfunction
+
+nnoremap <leader>. :call OpenTestAlternate()<cr>
+nnoremap <leader>s <c-w>o :call OpenTestAlternate()<cr>
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" RUNNING TESTS
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+map <leader>t :call RunTestFile()<cr>
+map <leader>T :call RunNearestTest()<cr>
+map <leader>a :call RunTests('')<cr>
+
+function! RunTestFile(...)
+    if a:0
+        let command_suffix = a:1
+    else
+        let command_suffix = ""
+    endif
+
+    " Run the tests for the previously-marked file.
+    let in_test_file = match(expand("%"), '\(.feature\|_spec.rb\)$') != -1
+    if in_test_file
+        call SetTestFile()
+    elseif !exists("t:grb_test_file")
+        return
+    end
+    call RunTests(t:grb_test_file . command_suffix)
+endfunction
+
+function! RunNearestTest()
+    let spec_line_number = line('.')
+    call RunTestFile(":" . spec_line_number . " -b")
+endfunction
+
+function! SetTestFile()
+    " Set the spec file that tests will be run for.
+    let t:grb_test_file=@%
+endfunction
+
+function! RunTests(filename)
+    " Write the file and run tests for the given filename
+    :w
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
+    if match(a:filename, '\.feature$') != -1
+        exec ":!script/features " . a:filename
+    else
+        if filereadable("zeus.json")
+            exec ":!zeus rspec " . a:filename
+        elseif filereadable("script/test")
+            exec ":!script/test " . a:filename
+        elseif filereadable("Gemfile")
+            exec ":!bundle exec rspec --color " . a:filename
+        else
+            exec ":!rspec --color " . a:filename
+        end
+    end
+endfunction
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Open buffer with <C-B>
+""""""""""""
+" CtrlP    "
+""""""""""""
 nmap <C-B> :CtrlPBuffer<cr>
+" Open buffer with <C-B>
+let g:ctrlp_custom_ignore='\.git$\|\.pdf$'
+let g:ctrlp_use_caching=0
+let g:ctrlp_max_height=5
+let g:ctrlp_extensions=['quickfix']
+let g:ctrlp_user_command={
+  \ 'types' : {
+    \ 1: ['.git', 'cd %s && git ls-tree -r HEAD | grep -v -e "^\d\+\scommit" | cut -f 2']
+    \ },
+  \ 'fallback': 'find %s -name "tmp" -prune -o -print'
+  \ }
+nnoremap <C-f> :CtrlPFallback<CR>
 
-" Ignore git files on CtrlP
-let g:ctrlp_custom_ignore='\.git$'
 
-" Gist plugin
+""""""""""""
+" Gist     "
+""""""""""""
 let g:gist_open_browser_after_post = 1
+let g:gist_post_private = 1
 let g:gist_detect_filetype = 1
 let g:gist_clip_command = 'xclip -selection clipboard'
 let g:github_token = $GITHUB_TOKEN
+
+""""""""""""
+" CTags    "
+""""""""""""
+set tags+=gems.tags
+
+nnoremap <F5> :GundoToggle<CR>
+nnoremap <F8> :TagbarToggle<CR>
+nnoremap <C-n> :NERDTreeToggle<CR>
+
+"""""""""""""
+" Powerline "
+"""""""""""""
+set rtp+=~/.vim/bundle/powerline/powerline/bindings/vim
+set noshowmode
+set laststatus=2
+
+"""""""""""""
+" Greper    "
+"""""""""""""
+nmap <silent> <leader>a <Plug>GreperBangWord\|<C-w>p
+nmap <silent> <leader>A <Plug>GreperBangWORD\|<C-w>p
+
+
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" KeyBinds 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+nnoremap <C-s> :w<CR>
+nnoremap <leader>c :0,9999bdelete<CR>
+nnoremap <Tab> <c-w><c-w><c-w>=

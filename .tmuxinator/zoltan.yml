@@ -4,12 +4,7 @@
 project_name: zoltan
 project_root: ~/projects/ruby/zoltan/
 tabs:
-  - server:
-      layout: main-vertical
-      panes:
-        - #empty
-        - #empty
-        - #empty
+  - server: ssh root@192.168.1.110
   - editor: vim
   - frontend:
       layout: main-horizontal

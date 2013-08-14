@@ -8,8 +8,9 @@ ZSH=$HOME/.oh-my-zsh
 ZSH_THEME="duke"
 
 # Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+alias dotfiles="cd ~/projects/dotfiles"
+alias zshconfig="vim ~/.zshrc"
+alias ohmyzsh="vim ~/.oh-my-zsh"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -30,12 +31,13 @@ ZSH_THEME="duke"
 plugins=(git lol archlinux)
 
 source $ZSH/oh-my-zsh.sh
+unsetopt correct_all
 
 # Customize to your needs...
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
-
-# Android PATH
+export PATH=$HOME/.rvm/bin
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
 export PATH=$PATH:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
+export PATH=$PATH:~/.cabal/bin:~/.xmonad/bin
 
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 [[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
@@ -43,23 +45,10 @@ export PAGER=most
 export MANPAGER=most
 export TERM=xterm-256color
 
-
-
 # fixing suspend/resume on vim
-alias v="stty stop '' -ixoff ; vim --servername VIM --remote-silent"
-alias vim="stty stop '' -ixoff ; vim --servername VIM"
-export GITHUB_TOKEN="141ac5143d7fc424a203f514e10dc40d"
+alias vim="stty stop '' -ixoff ; vim"
+export GITHUB_TOKEN=""
 ttyctl -f
 
 bindkey -v
 bindkey '^r' history-incremental-search-backward
-
-# attach || start tmux
-# if which tmux 2>&1 > /dev/null; then
-#   if test -z ${TMUX}; then
-#     tmux
-#   fi
-#   while test -z ${TMUX}; do
-#     tmux attach || break
-#   done
-# fi
