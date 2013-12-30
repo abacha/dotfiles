@@ -34,7 +34,7 @@ source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
 # Customize to your needs...
-export PATH=$HOME/.rvm/bin
+export PATH=$GEM_HOME/.rvm/bin
 export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
 export PATH=$PATH:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
 export PATH=$PATH:~/.cabal/bin:~/.xmonad/bin
@@ -47,8 +47,10 @@ export TERM=xterm-256color
 
 # fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"
-export GITHUB_TOKEN=""
+export GITHUB_TOKEN="141ac5143d7fc424a203f514e10dc40d"
 ttyctl -f
 
 bindkey -v
 bindkey '^r' history-incremental-search-backward
+
+PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting

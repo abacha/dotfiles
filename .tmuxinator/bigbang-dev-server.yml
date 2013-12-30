@@ -1,9 +1,9 @@
 # ~/.tmuxinator/bigbang-server.yml
 # you can make as many tabs as you wish...
 
-project_name: bigbang-devevelopment
-project_root: ~/bigbang/
-tabs:
+name: bigbang-development
+root: ~/bigbang/
+windows:
   - server:
       layout: 1f34,197x23,0,0{144x23,0,0,15,52x23,145,0,17}
       panes:
