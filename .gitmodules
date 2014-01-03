@@ -2,5 +2,5 @@
 	path = powerline
 	url = git://github.com/Lokaltog/powerline.git
 [submodule "guake-colors-solarized"]
-  path = guake-colors-solarized
-  url = https://github.com/coolwanglu/guake-colors-solarized.git
+	path = guake-colors-solarized
+	url = https://github.com/coolwanglu/guake-colors-solarized
