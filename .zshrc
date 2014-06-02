@@ -38,6 +38,8 @@ export PATH=$GEM_HOME/.rvm/bin
 export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
 export PATH=$PATH:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
 export PATH=$PATH:~/.cabal/bin:~/.xmonad/bin
+export PATH=$HOME/bin:$PATH
+export EDITOR=vim
 
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 [[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator

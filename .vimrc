@@ -17,10 +17,11 @@ Bundle 'gmarik/vundle'
 Bundle 'Valloric/YouCompleteMe'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'kchmck/vim-coffee-script'
-Bundle 'rizzatti/ctrlp.vim'
+Bundle 'abacha/ctrlp.vim'
 Bundle 'majutsushi/tagbar'
 Bundle 'mattn/gist-vim'
 Bundle 'mattn/webapi-vim'
+Bundle 'ecomba/vim-ruby-refactoring'
 Bundle 'rizzatti/funcoo.vim'
 Bundle 'rizzatti/greper.vim'
 Bundle 'nathanaelkane/vim-indent-guides'
@@ -236,7 +237,7 @@ function! AlternateForCurrentFile()
   let new_file = current_file
   let in_spec = match(current_file, '^spec/') != -1
   let going_to_spec = !in_spec
-  let in_app = match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<helpers\>') != -1
+  let in_app = match(current_file, '\<buinsess\>') || match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<helpers\>') != -1
   if going_to_spec
     if in_app
       let new_file = substitute(new_file, '^app/', '', '')
@@ -341,7 +342,7 @@ nmap <C-B> :CtrlPBuffer<cr>
 " Open buffer with <C-B>
 let g:ctrlp_custom_ignore='\.git$\|\.pdf$'
 let g:ctrlp_use_caching=0
-let g:ctrlp_max_height=5
+let g:ctrlp_max_height=10
 let g:ctrlp_extensions=['quickfix']
 let g:ctrlp_user_command={
   \ 'types' : {
@@ -383,11 +384,15 @@ set laststatus=2
 nmap <silent> <leader>a <Plug>GreperBangWord\|<C-w>p
 nmap <silent> <leader>A <Plug>GreperBangWORD\|<C-w>p
 
+"""""""""""""
+" NERDTree  "
+"""""""""""""
+autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " KeyBinds
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 nnoremap <C-s> :w<CR>
-nnoremap <leader>c :0,9999bdelete<CR>
+nnoremap <leader>c :bufdo :bd<CR>
 nnoremap <Tab> <c-w><c-w><c-w>=
