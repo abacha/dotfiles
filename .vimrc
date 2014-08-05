@@ -18,7 +18,6 @@ Bundle 'Valloric/YouCompleteMe'
 Bundle 'altercation/vim-colors-solarized'
 Bundle 'kchmck/vim-coffee-script'
 Bundle 'abacha/ctrlp.vim'
-Bundle 'majutsushi/tagbar'
 Bundle 'mattn/gist-vim'
 Bundle 'mattn/webapi-vim'
 Bundle 'ecomba/vim-ruby-refactoring'
@@ -304,7 +303,6 @@ let g:github_token = $GITHUB_TOKEN
 " CTags    "
 """"""""""""
 set tags+=gems.tags
-
 
 """""""""""""
 " Powerline "

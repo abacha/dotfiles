@@ -34,7 +34,7 @@
       <property name="style" type="uint" value="0"/>
     </property>
     <property name="plugin-5" type="string" value="clock">
-      <property name="digital-format" type="string" value="%T"/>
+      <property name="digital-format" type="string" value="%Y-%m-%d %T"/>
       <property name="show-frame" type="bool" value="false"/>
     </property>
     <property name="plugin-6" type="string" value="systray">
