@@ -25,7 +25,6 @@ Bundle 'ecomba/vim-ruby-refactoring'
 Bundle 'rizzatti/funcoo.vim'
 Bundle 'rizzatti/greper.vim'
 Bundle 'nathanaelkane/vim-indent-guides'
-Bundle 'sjl/gundo.vim'
 Bundle 'tpope/vim-commentary'
 Bundle 'tpope/vim-endwise'
 Bundle 'tpope/vim-fugitive'
@@ -114,7 +113,7 @@ set incsearch
 set showmatch
 set matchtime=2
 set ruler "show cursor pos on status bar
-set relativenumber "show line number
+set number "show line number
 set autoread
 set wildmenu
 set wildmode=list:longest
@@ -152,9 +151,6 @@ set pumheight=10
 set wildignore+=*/.hg/*,*/.svn/*
 set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
 set wildignore+=.gitkeep,.DS_Store
-
-" Toggle absolute/relative line number
-map <leader>r :exec &nu==0 ? "set number" : "set relativenumber"<cr>
 
 " Toggle paste mode with <leader>p
 set pastetoggle=<leader>p
@@ -257,64 +253,6 @@ endfunction
 nnoremap <leader>. :call OpenTestAlternate()<cr>
 nnoremap <leader>s <c-w>o :call OpenTestAlternate()<cr>
 
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" RUNNING TESTS
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-map <leader>t :call RunTestFile()<cr>
-map <leader>T :call RunNearestTest()<cr>
-map <leader>a :call RunTests('')<cr>
-
-function! RunTestFile(...)
-    if a:0
-        let command_suffix = a:1
-    else
-        let command_suffix = ""
-    endif
-
-    " Run the tests for the previously-marked file.
-    let in_test_file = match(expand("%"), '\(.feature\|_spec.rb\)$') != -1
-    if in_test_file
-        call SetTestFile()
-    elseif !exists("t:grb_test_file")
-        return
-    end
-    call RunTests(t:grb_test_file . command_suffix)
-endfunction
-
-function! RunNearestTest()
-    let spec_line_number = line('.')
-    call RunTestFile(":" . spec_line_number . " -b")
-endfunction
-
-function! SetTestFile()
-    " Set the spec file that tests will be run for.
-    let t:grb_test_file=@%
-endfunction
-
-function! RunTests(filename)
-    " Write the file and run tests for the given filename
-    :w
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    :silent !echo;echo;echo;echo;echo;echo;echo;echo;echo;echo
-    if match(a:filename, '\.feature$') != -1
-        exec ":!script/features " . a:filename
-    else
-        if filereadable("zeus.json")
-            exec ":!zeus rspec " . a:filename
-        elseif filereadable("script/test")
-            exec ":!script/test " . a:filename
-        elseif filereadable("Gemfile")
-            exec ":!bundle exec rspec --color " . a:filename
-        else
-            exec ":!rspec --color " . a:filename
-        end
-    end
-endfunction
-
 " Run a given vim command on the results of fuzzy selecting from a given shell
 " command. See usage below.
 function! SelectaCommand(choice_command, selecta_args, vim_command)
@@ -367,9 +305,6 @@ let g:github_token = $GITHUB_TOKEN
 """"""""""""
 set tags+=gems.tags
 
-nnoremap <F5> :GundoToggle<CR>
-nnoremap <F8> :TagbarToggle<CR>
-nnoremap <C-n> :NERDTreeToggle<CR>
 
 """""""""""""
 " Powerline "
@@ -389,10 +324,23 @@ nmap <silent> <leader>A <Plug>GreperBangWORD\|<C-w>p
 """""""""""""
 autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
 
+""""""""""""""""""""
+" ruby refactoring "
+""""""""""""""""""""
+nnoremap <leader>rap  :RAddParameter<cr>
+nnoremap <leader>rcpc :RConvertPostConditional<cr>
+nnoremap <leader>rel  :RExtractLet<cr>
+vnoremap <leader>rec  :RExtractConstant<cr>
+vnoremap <leader>relv :RExtractLocalVariable<cr>
+nnoremap <leader>rit  :RInlineTemp<cr>
+vnoremap <leader>rrlv :RRenameLocalVariable<cr>
+vnoremap <leader>rriv :RRenameInstanceVariable<cr>
+vnoremap <leader>rem  :RExtractMethod<cr>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " KeyBinds
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-nnoremap <C-s> :w<CR>
 nnoremap <leader>c :bufdo :bd<CR>
 nnoremap <Tab> <c-w><c-w><c-w>=
+nnoremap <F8> :TagbarToggle<CR>
+nnoremap <C-n> :NERDTreeToggle<CR>
