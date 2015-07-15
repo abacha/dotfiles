@@ -56,3 +56,5 @@ bindkey -v
 bindkey '^r' history-incremental-search-backward
 
 PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
+
+unset GREP_OPTIONS

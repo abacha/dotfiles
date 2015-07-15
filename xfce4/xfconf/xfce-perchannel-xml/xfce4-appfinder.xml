@@ -32,8 +32,8 @@
     </property>
   </property>
   <property name="last" type="empty">
-    <property name="window-height" type="int" value="1049"/>
-    <property name="window-width" type="int" value="1278"/>
+    <property name="window-height" type="int" value="1053"/>
+    <property name="window-width" type="int" value="1918"/>
     <property name="pane-position" type="int" value="180"/>
   </property>
 </channel>

@@ -35,6 +35,8 @@ Bundle 'tpope/vim-tbone'
 Bundle 'airblade/vim-gitgutter'
 Bundle 'scrooloose/nerdtree'
 Bundle 'Lokaltog/powerline'
+Bundle 'lucapette/vim-ruby-doc'
+Bundle 'skwp/greplace.vim'
 
 let g:netrw_home="~/.vim/backup"
 
@@ -217,7 +219,12 @@ noremap <C-l> <C-w>l
 
 " Tabs
 noremap <leader>n :tabn<CR>
-
+nnoremap <D-0> 0gt
+nnoremap <D-1> 1gt
+nnoremap <D-2> 2gt
+nnoremap <D-3> 3gt
+nnoremap <D-4> 4gt
+nnoremap <D-5> 5gt
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " FUNCTIONS

@@ -5,10 +5,10 @@
   <property name="panels" type="array">
     <value type="int" value="1"/>
     <property name="panel-1" type="empty">
-      <property name="position" type="string" value="p=6;x=0;y=0"/>
+      <property name="position" type="string" value="p=6;x=1920;y=12"/>
       <property name="length" type="uint" value="100"/>
       <property name="position-locked" type="bool" value="true"/>
-      <property name="size" type="uint" value="30"/>
+      <property name="size" type="uint" value="24"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="1"/>
         <value type="int" value="3"/>
@@ -22,7 +22,10 @@
       <property name="disable-struts" type="bool" value="false"/>
       <property name="output-name" type="string" value=""/>
       <property name="span-monitors" type="bool" value="true"/>
-      <property name="autohide" type="bool" value="false"/>
+      <property name="length-adjust" type="bool" value="false"/>
+      <property name="nrows" type="uint" value="1"/>
+      <property name="background-style" type="uint" value="0"/>
+      <property name="autohide-behavior" type="uint" value="0"/>
     </property>
   </property>
   <property name="plugins" type="empty">
@@ -39,16 +42,21 @@
     </property>
     <property name="plugin-6" type="string" value="systray">
       <property name="names-visible" type="array">
+        <value type="string" value="xchat"/>
         <value type="string" value="networkmanager applet"/>
         <value type="string" value="guake"/>
         <value type="string" value="skype"/>
         <value type="string" value="steam"/>
+        <value type="string" value="clipit"/>
+        <value type="string" value="zeal"/>
         <value type="string" value="pidgin"/>
         <value type="string" value="chromium"/>
         <value type="string" value="parcellite"/>
+        <value type="string" value="dropbox"/>
         <value type="string" value="exe"/>
         <value type="string" value="xfce4-power-manager"/>
         <value type="string" value="kontaminuti"/>
+        <value type="string" value="scp-dbus-service.py"/>
       </property>
       <property name="show-frame" type="bool" value="false"/>
       <property name="names-hidden" type="array">
