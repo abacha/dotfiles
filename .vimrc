@@ -9,34 +9,32 @@ set fileencoding=utf-8
 let mapleader=","
 
 " let Vundle manage Vundle
-set rtp+=~/.vim/bundle/vundle/
-call vundle#rc()
-Bundle 'gmarik/vundle'
+set rtp+=~/.vim/bundle/Vundle.vim
+call vundle#begin()
+Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
-Bundle 'Valloric/YouCompleteMe'
-Bundle 'altercation/vim-colors-solarized'
-Bundle 'kchmck/vim-coffee-script'
-Bundle 'abacha/ctrlp.vim'
-Bundle 'mattn/gist-vim'
-Bundle 'mattn/webapi-vim'
-Bundle 'ecomba/vim-ruby-refactoring'
-Bundle 'rizzatti/funcoo.vim'
-Bundle 'rizzatti/greper.vim'
-Bundle 'nathanaelkane/vim-indent-guides'
-Bundle 'tpope/vim-commentary'
-Bundle 'tpope/vim-endwise'
-Bundle 'tpope/vim-fugitive'
-Bundle 'tpope/vim-git'
-Bundle 'tpope/vim-haml'
-Bundle 'tpope/vim-rails'
-Bundle 'tpope/vim-eunuch'
-Bundle 'tpope/vim-tbone'
-Bundle 'airblade/vim-gitgutter'
-Bundle 'scrooloose/nerdtree'
-Bundle 'Lokaltog/powerline'
-Bundle 'lucapette/vim-ruby-doc'
-Bundle 'skwp/greplace.vim'
+Plugin 'Valloric/YouCompleteMe'
+Plugin 'altercation/vim-colors-solarized'
+Plugin 'kchmck/vim-coffee-script'
+Plugin 'abacha/ctrlp.vim'
+Plugin 'mattn/gist-vim'
+Plugin 'mattn/webapi-vim'
+Plugin 'rizzatti/funcoo.vim'
+Plugin 'rizzatti/greper.vim'
+Plugin 'nathanaelkane/vim-indent-guides'
+Plugin 'tpope/vim-commentary'               " comment gcc
+Plugin 'tpope/vim-endwise'
+Plugin 'tpope/vim-git'
+Plugin 'tpope/vim-haml'
+Plugin 'tpope/vim-rails'
+Plugin 'tpope/vim-eunuch'                   " unix shell
+Plugin 'tpope/vim-tbone'                    " tmux commands
+Plugin 'airblade/vim-gitgutter'             " file tree
+Plugin 'scrooloose/nerdtree'
+Plugin 'Lokaltog/powerline'
+call vundle#end()            " required
+
 
 let g:netrw_home="~/.vim/backup"
 
@@ -115,6 +113,7 @@ set showmatch
 set matchtime=2
 set ruler "show cursor pos on status bar
 set number "show line number
+set relativenumber
 set autoread
 set wildmenu
 set wildmode=list:longest
@@ -217,15 +216,6 @@ noremap <C-k> <C-w>k
 noremap <C-h> <C-w>h
 noremap <C-l> <C-w>l
 
-" Tabs
-noremap <leader>n :tabn<CR>
-nnoremap <D-0> 0gt
-nnoremap <D-1> 1gt
-nnoremap <D-2> 2gt
-nnoremap <D-3> 3gt
-nnoremap <D-4> 4gt
-nnoremap <D-5> 5gt
-
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " FUNCTIONS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -259,22 +249,6 @@ endfunction
 nnoremap <leader>. :call OpenTestAlternate()<cr>
 nnoremap <leader>s <c-w>o :call OpenTestAlternate()<cr>
 
-" Run a given vim command on the results of fuzzy selecting from a given shell
-" command. See usage below.
-function! SelectaCommand(choice_command, selecta_args, vim_command)
-  try
-    silent let selection = system(a:choice_command . " | selecta " . a:selecta_args)
-  catch /Vim:Interrupt/
-    " Swallow the ^C so that the redraw below happens; otherwise there will be
-    " leftovers from selecta on the screen
-  endtry
-  exec a:vim_command . " " . selection
-  redraw!
-endfunction
-
-" Find all files in all non-dot directories starting in the working directory.
-" Fuzzy select one of those. Open the selected file with :e.
-nnoremap <leader>g :call SelectaCommand("find * -type f", "", ":e")<cr>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -328,19 +302,6 @@ nmap <silent> <leader>A <Plug>GreperBangWORD\|<C-w>p
 " NERDTree  "
 """""""""""""
 autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
-
-""""""""""""""""""""
-" ruby refactoring "
-""""""""""""""""""""
-nnoremap <leader>rap  :RAddParameter<cr>
-nnoremap <leader>rcpc :RConvertPostConditional<cr>
-nnoremap <leader>rel  :RExtractLet<cr>
-vnoremap <leader>rec  :RExtractConstant<cr>
-vnoremap <leader>relv :RExtractLocalVariable<cr>
-nnoremap <leader>rit  :RInlineTemp<cr>
-vnoremap <leader>rrlv :RRenameLocalVariable<cr>
-vnoremap <leader>rriv :RRenameInstanceVariable<cr>
-vnoremap <leader>rem  :RExtractMethod<cr>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " KeyBinds
