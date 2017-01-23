@@ -1,4 +1,5 @@
 set nocompatible "use vim defaults
+filetype off
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " ENCODING
@@ -14,14 +15,12 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
-Plugin 'Valloric/YouCompleteMe'
+"Plugin 'Valloric/YouCompleteMe'
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'kchmck/vim-coffee-script'
 Plugin 'abacha/ctrlp.vim'
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
-Plugin 'rizzatti/funcoo.vim'
-Plugin 'rizzatti/greper.vim'
 Plugin 'nathanaelkane/vim-indent-guides'
 Plugin 'tpope/vim-commentary'               " comment gcc
 Plugin 'tpope/vim-endwise'
@@ -33,8 +32,11 @@ Plugin 'tpope/vim-tbone'                    " tmux commands
 Plugin 'airblade/vim-gitgutter'             " file tree
 Plugin 'scrooloose/nerdtree'
 Plugin 'Lokaltog/powerline'
+Plugin 'mileszs/ack.vim'
 call vundle#end()            " required
 
+syntax enable
+filetype plugin indent on
 
 let g:netrw_home="~/.vim/backup"
 
@@ -49,12 +51,18 @@ let g:indent_guides_guide_size=0
 noremap <leader>ig :IndentGuidesToggle<CR>
 
 if &t_Co > 2 || has("gui_running")
-  syntax enable
   set hlsearch
   nmap <silent> <leader>h :silent :nohlsearch<CR>
 endif
 
 autocmd BufWritePre * :%s/\s\+$//e
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" COLORS
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+set t_Co=256
+set background=dark
+colorscheme solarized
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " FOLDING
@@ -66,17 +74,6 @@ set foldlevel=1
 autocmd InsertEnter * if !exists('w:last_fdm') | let w:last_fdm=&foldmethod | setlocal foldmethod=manual | endif
 autocmd InsertLeave,WinLeave * if exists('w:last_fdm') | let &l:foldmethod=w:last_fdm | unlet w:last_fdm | endif
 nnoremap <space> za
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" COLORS
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-set t_Co=256
-set background=dark
-colorscheme solarized
-
-filetype on
-filetype plugin on
-filetype indent on
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " UNBIND KEYS
@@ -293,10 +290,12 @@ set noshowmode
 set laststatus=2
 
 """""""""""""
-" Greper    "
+"   Ack     "
 """""""""""""
-nmap <silent> <leader>a <Plug>GreperBangWord\|<C-w>p
-nmap <silent> <leader>A <Plug>GreperBangWORD\|<C-w>p
+if executable('ag')
+  let g:ackprg = 'ag --vimgrep'
+endif
+nnoremap <Leader>a :exe 'Ack!' expand('<cword>')<cr>
 
 """""""""""""
 " NERDTree  "

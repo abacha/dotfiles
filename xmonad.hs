@@ -1,7 +1,7 @@
 -- xmonad config used by Vic Fryzel
 -- Author: Vic Fryzel
 -- http://github.com/vicfryzel/xmonad-config
- 
+
 import System.IO
 import System.Exit
 import XMonad
@@ -31,7 +31,7 @@ myTerminal = "/usr/bin/xfce4-terminal"
 -- The default number of workspaces (virtual screens) and their names.
 --
 myWorkspaces = ["1:term","2:web1","3:web2","4:chat","5:media", "6:vm"] ++ map show [7..9]
- 
+
 
 ------------------------------------------------------------------------
 -- Window rules
@@ -112,7 +112,7 @@ myBorderWidth = 1
 -- "windows key" is usually mod4Mask.
 --
 myModMask = mod4Mask
- 
+
 myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   ----------------------------------------------------------------------
   -- Custom key bindings
@@ -250,7 +250,7 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
      restart "xmonad" True)
   ]
   ++
- 
+
   -- mod-[1..9], Switch to workspace N
   -- mod-shift-[1..9], Move client to workspace N
   [((m .|. modMask, k), windows $ f i)
@@ -263,33 +263,7 @@ myKeys conf@(XConfig {XMonad.modMask = modMask}) = M.fromList $
   [((m .|. modMask, key), screenWorkspace sc >>= flip whenJust (windows . f))
       | (key, sc) <- zip [xK_w, xK_e, xK_r] [0..]
       , (f, m) <- [(W.view, 0), (W.shift, shiftMask)]]
- 
- 
-------------------------------------------------------------------------
--- Mouse bindings
---
--- Focus rules
--- True if your focus should follow your mouse cursor.
-myFocusFollowsMouse :: Bool
-myFocusFollowsMouse = False
- 
-myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
-  [
-    -- mod-button1, Set the window to floating mode and move by dragging
-    ((modMask, button1),
-     (\w -> focus w >> mouseMoveWindow w))
- 
-    -- mod-button2, Raise the window to the top of the stack
-    , ((modMask, button2),
-       (\w -> focus w >> windows W.swapMaster))
- 
-    -- mod-button3, Set the window to floating mode and resize by dragging
-    , ((modMask, button3),
-       (\w -> focus w >> mouseResizeWindow w))
- 
-    -- you may also bind events to the mouse scroll wheel (button4 and button5)
-  ]
- 
+
 
 ------------------------------------------------------------------------
 -- Status bars and logging
@@ -300,7 +274,7 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
 --
 -- > logHook = dynamicLogDzen
 --
- 
+
 
 ------------------------------------------------------------------------
 -- Startup hook
@@ -310,7 +284,7 @@ myMouseBindings (XConfig {XMonad.modMask = modMask}) = M.fromList $
 --
 -- By default, do nothing.
 myStartupHook = return ()
- 
+
 
 ------------------------------------------------------------------------
 -- Run xmonad with all the defaults we set up.
@@ -326,30 +300,28 @@ main = do
       , manageHook = manageDocks <+> myManageHook
       , startupHook = setWMName "LG3D"
   }
- 
+
 
 ------------------------------------------------------------------------
 -- Combine it all together
 -- A structure containing your configuration settings, overriding
--- fields in the default config. Any you don't override, will 
+-- fields in the default config. Any you don't override, will
 -- use the defaults defined in xmonad/XMonad/Config.hs
--- 
+--
 -- No need to modify this.
 --
 defaults = defaultConfig {
     -- simple stuff
     terminal           = myTerminal,
-    focusFollowsMouse  = myFocusFollowsMouse,
     borderWidth        = myBorderWidth,
     modMask            = myModMask,
     workspaces         = myWorkspaces,
     normalBorderColor  = myNormalBorderColor,
     focusedBorderColor = myFocusedBorderColor,
- 
+
     -- key bindings
     keys               = myKeys,
-    mouseBindings      = myMouseBindings,
- 
+
     -- hooks, layouts
     layoutHook         = smartBorders $ myLayout,
     manageHook         = myManageHook,
