@@ -15,7 +15,6 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
-"Plugin 'Valloric/YouCompleteMe'
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'kchmck/vim-coffee-script'
 Plugin 'abacha/ctrlp.vim'
@@ -296,6 +295,9 @@ if executable('ag')
   let g:ackprg = 'ag --vimgrep'
 endif
 nnoremap <Leader>a :exe 'Ack!' expand('<cword>')<cr>
+cnoreabbrev Ack Ack!
+cnoreabbrev G Ack!
+
 
 """""""""""""
 " NERDTree  "
@@ -307,5 +309,4 @@ autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 nnoremap <leader>c :bufdo :bd<CR>
 nnoremap <Tab> <c-w><c-w><c-w>=
-nnoremap <F8> :TagbarToggle<CR>
 nnoremap <C-n> :NERDTreeToggle<CR>
