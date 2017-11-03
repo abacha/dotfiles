@@ -17,21 +17,21 @@ Plugin 'VundleVim/Vundle.vim'
 " Bundles
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'kchmck/vim-coffee-script'
-Plugin 'abacha/ctrlp.vim'
+Plugin 'abacha/ctrlp.vim'                   " fuzzy finder
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
-Plugin 'nathanaelkane/vim-indent-guides'
+Plugin 'leafgarland/typescript-vim'
 Plugin 'tpope/vim-commentary'               " comment gcc
 Plugin 'tpope/vim-endwise'
-Plugin 'tpope/vim-git'
+Plugin 'tpope/vim-fugitive'                 " git helpers
 Plugin 'tpope/vim-haml'
 Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'                   " unix shell
 Plugin 'tpope/vim-tbone'                    " tmux commands
 Plugin 'airblade/vim-gitgutter'             " file tree
-Plugin 'scrooloose/nerdtree'
+Plugin 'scrooloose/nerdtree'                " source tree file
 Plugin 'Lokaltog/powerline'
-Plugin 'mileszs/ack.vim'
+Plugin 'mileszs/ack.vim'                    " search in files
 call vundle#end()            " required
 
 syntax enable
@@ -42,12 +42,6 @@ let g:netrw_home="~/.vim/backup"
 " Open vimrc with <leader>v
 nmap <leader>v :edit $MYVIMRC<CR>
 nmap <leader>sv :source $MYVIMRC<cr>
-
-let g:indent_guides_auto_colors=1
-let g:indent_guides_enable_on_vim_startup=0
-let g:indent_guides_color_change_percent=3
-let g:indent_guides_guide_size=0
-noremap <leader>ig :IndentGuidesToggle<CR>
 
 if &t_Co > 2 || has("gui_running")
   set hlsearch
@@ -245,6 +239,15 @@ endfunction
 nnoremap <leader>. :call OpenTestAlternate()<cr>
 nnoremap <leader>s <c-w>o :call OpenTestAlternate()<cr>
 
+function! CleverTab()
+  if strpart( getline('.'), 0, col('.')-1 ) =~ '^\s*$'
+    return "\<Tab>"
+  else
+    return "\<C-N>"
+  endif
+endfunction
+inoremap <Tab> <C-R>=CleverTab()<CR>
+
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -310,3 +313,4 @@ autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
 nnoremap <leader>c :bufdo :bd<CR>
 nnoremap <Tab> <c-w><c-w><c-w>=
 nnoremap <C-n> :NERDTreeToggle<CR>
+inoremap <C-@> <C-N>

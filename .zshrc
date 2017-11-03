@@ -12,6 +12,11 @@ alias dotfiles="cd ~/projects/dotfiles"
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 
+# aliases
+alias g='git'
+alias up='docker-compose up'
+alias upb='docker-compose up --build'
+
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
 
@@ -36,8 +41,7 @@ unsetopt correct_all
 # Customize to your needs...
 export PATH=$GEM_HOME/.rvm/bin
 export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
-export PATH=$PATH:/opt/android-sdk/tools:/opt/android-sdk/platform-tools
-export PATH=$PATH:~/.cabal/bin:~/.xmonad/bin
+export PATH=$PATH:~/.xmonad/bin
 export PATH=$HOME/bin:$PATH
 export EDITOR=vim
 
@@ -49,7 +53,6 @@ export TERM=xterm-256color
 
 # fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"
-export GITHUB_TOKEN="141ac5143d7fc424a203f514e10dc40d"
 ttyctl -f
 
 bindkey -v
@@ -58,3 +61,15 @@ bindkey '^r' history-incremental-search-backward
 PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 unset GREP_OPTIONS
+
+notes() {
+  if [ ! -z "$1" ]; then
+    # Using the "$@" here will take all parameters passed into
+    # this function so we can place everything into our file.
+    echo "$@" >> "$HOME/notes.md"
+  else
+    # If no arguments were passed we will take stdout and place
+    # it into our notes instead.
+    cat - >> "$HOME/notes.md"
+  fi
+}
