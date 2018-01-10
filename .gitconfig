@@ -13,7 +13,7 @@
 [dude]
 	interval = 60
 [alias]
-  hist = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  h = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
   st = status
   s = status -s
   amend = commit --amend
@@ -27,5 +27,8 @@
   sm = submodule
   rb = rebase
   l = log --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  fp = fetch --prune
 [push]
 	default = matching
+[branch]
+	autosetuprebase = always

@@ -191,7 +191,7 @@ nnoremap <leader>[ viw<esc>a[<esc>hbi]<esc>lel
 """""""""""""""""""""""
 
 " Split
-noremap <C-\> :vsp<CR>
+noremap <C-\> :100vsp<CR>
 noremap <C--> :sp<CR>
 
 " Resize
@@ -246,7 +246,7 @@ function! CleverTab()
     return "\<C-N>"
   endif
 endfunction
-inoremap <Tab> <C-R>=CleverTab()<CR>
+" inoremap <Tab> <C-R>=CleverTab()<CR>
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " PLUGINS

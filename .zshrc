@@ -13,9 +13,11 @@ alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 
 # aliases
+alias pipeline='rubocop; brakeman; rails_best_practices; rspec'
 alias g='git'
 alias up='docker-compose up'
 alias upb='docker-compose up --build'
+alias dex='docker-compose exec $(basename "$PWD")'
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
