@@ -4,3 +4,7 @@
 [submodule "guake-colors-solarized"]
 	path = guake-colors-solarized
 	url = https://github.com/coolwanglu/guake-colors-solarized
+[submodule "xfce4-terminal-colors-solarized"]
+	path = xfce4-terminal-colors-solarized
+	url = https://github.com/sgerrand/xfce4-terminal-colors-solarized
+
