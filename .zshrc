@@ -18,6 +18,8 @@ alias g='git'
 alias up='docker-compose up'
 alias upb='docker-compose up --build'
 alias dex='docker-compose exec $(basename "$PWD")'
+alias drun='docker-compose run $(basename "$PWD")'
+alias position="git fetch --prune && git checkout devel && git rebase origin/devel && (git branch --merged | egrep -v \"(^\*|master|devel)\" | xargs git branch -d)"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"

@@ -16,12 +16,11 @@ Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
 Plugin 'altercation/vim-colors-solarized'
-Plugin 'kchmck/vim-coffee-script'
+" Plugin 'kchmck/vim-coffee-script'
 Plugin 'abacha/ctrlp.vim'                   " fuzzy finder
 Plugin 'mattn/gist-vim'
 Plugin 'mattn/webapi-vim'
 Plugin 'leafgarland/typescript-vim'
-Plugin 'tpope/vim-commentary'               " comment gcc
 Plugin 'tpope/vim-endwise'
 Plugin 'tpope/vim-fugitive'                 " git helpers
 Plugin 'tpope/vim-haml'
@@ -30,11 +29,10 @@ Plugin 'tpope/vim-eunuch'                   " unix shell
 Plugin 'tpope/vim-tbone'                    " tmux commands
 Plugin 'airblade/vim-gitgutter'             " file tree
 Plugin 'scrooloose/nerdtree'                " source tree file
-Plugin 'Lokaltog/powerline'
+"Plugin 'Lokaltog/powerline'
 Plugin 'mileszs/ack.vim'                    " search in files
 call vundle#end()            " required
 
-syntax enable
 filetype plugin indent on
 
 let g:netrw_home="~/.vim/backup"
@@ -53,6 +51,7 @@ autocmd BufWritePre * :%s/\s\+$//e
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " COLORS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+syntax enable
 set t_Co=256
 set background=dark
 colorscheme solarized
@@ -287,9 +286,9 @@ set tags+=gems.tags
 """""""""""""
 " Powerline "
 """""""""""""
-set rtp+=~/.vim/bundle/powerline/powerline/bindings/vim
-set noshowmode
-set laststatus=2
+" set rtp+=~/.vim/bundle/powerline/powerline/bindings/vim
+" set noshowmode
+" set laststatus=2
 
 """""""""""""
 "   Ack     "
@@ -314,3 +313,6 @@ nnoremap <leader>c :bufdo :bd<CR>
 nnoremap <Tab> <c-w><c-w><c-w>=
 nnoremap <C-n> :NERDTreeToggle<CR>
 inoremap <C-@> <C-N>
+nnoremap <F3> :tabprevious<CR>
+nnoremap <F4> :tabNext<CR>
+
