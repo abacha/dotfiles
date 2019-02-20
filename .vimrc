@@ -315,4 +315,5 @@ nnoremap <C-n> :NERDTreeToggle<CR>
 inoremap <C-@> <C-N>
 nnoremap <F3> :tabprevious<CR>
 nnoremap <F4> :tabNext<CR>
+vnoremap <C-y> :%y+<CR>
 
