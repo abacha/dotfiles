@@ -29,8 +29,8 @@ Plugin 'tpope/vim-eunuch'                   " unix shell
 Plugin 'tpope/vim-tbone'                    " tmux commands
 Plugin 'airblade/vim-gitgutter'             " file tree
 Plugin 'scrooloose/nerdtree'                " source tree file
-"Plugin 'Lokaltog/powerline'
 Plugin 'mileszs/ack.vim'                    " search in files
+Plugin 'github/copilot'
 call vundle#end()            " required
 
 filetype plugin indent on

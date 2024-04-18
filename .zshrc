@@ -20,6 +20,7 @@ alias upb='docker-compose up --build'
 alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
 alias position="git fetch --prune && git checkout devel && git rebase origin/devel && (git branch --merged | egrep -v \"(^\*|master|devel)\" | xargs git branch -d)"
+alias readmyenv="export \$(grep -v '^#' .env | xargs)"
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -43,17 +44,16 @@ source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
 # Customize to your needs...
-export PATH=$GEM_HOME/.rvm/bin
 export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
 export PATH=$PATH:~/.xmonad/bin
 export PATH=$HOME/bin:$PATH
 export EDITOR=vim
 
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 [[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
 export PAGER=most
 export MANPAGER=most
 export TERM=xterm-256color
+export GITHUB_TOKEN=
 
 # fixing suspend/resume on vim
 alias vim="stty stop '' -ixoff ; vim"
@@ -61,8 +61,6 @@ ttyctl -f
 
 bindkey -v
 bindkey '^r' history-incremental-search-backward
-
-PATH=$PATH:$HOME/.rvm/bin # Add RVM to PATH for scripting
 
 unset GREP_OPTIONS
 
@@ -77,3 +75,9 @@ notes() {
     cat - >> "$HOME/notes.md"
   fi
 }
+
+#
+# asdf config
+#
+. "$HOME/.asdf/asdf.sh"
+. "$HOME/.asdf/completions/asdf.bash"
