@@ -16,21 +16,19 @@ Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
 Plugin 'altercation/vim-colors-solarized'
-" Plugin 'kchmck/vim-coffee-script'
+Plugin 'kchmck/vim-coffee-script'
 Plugin 'abacha/ctrlp.vim'                   " fuzzy finder
-Plugin 'mattn/gist-vim'
-Plugin 'mattn/webapi-vim'
-Plugin 'leafgarland/typescript-vim'
+Plugin 'mattn/gist-vim'                     " create gists
+Plugin 'mattn/webapi-vim'                   " dependency: gist-vim
+Plugin 'leafgarland/typescript-vim'         " formatter: typescript
+Plugin 'tpope/vim-haml'                     " formatter: haml
 Plugin 'tpope/vim-endwise'
 Plugin 'tpope/vim-fugitive'                 " git helpers
-Plugin 'tpope/vim-haml'
-Plugin 'tpope/vim-rails'
 Plugin 'tpope/vim-eunuch'                   " unix shell
 Plugin 'tpope/vim-tbone'                    " tmux commands
-Plugin 'airblade/vim-gitgutter'             " file tree
+Plugin 'airblade/vim-gitgutter'             " git diff in sign col
 Plugin 'scrooloose/nerdtree'                " source tree file
 Plugin 'mileszs/ack.vim'                    " search in files
-Plugin 'github/copilot'
 call vundle#end()            " required
 
 filetype plugin indent on
@@ -152,7 +150,7 @@ endfunction
 map <leader>ea :b#<CR>
 
 " Save/quit typos
-cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq| cab Bd bd| cab Wa wa| cab WA wa
+cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq| cab Bd bd| cab Wa wa| cab WA wa| cab X x
 
 autocmd CursorHold * checktime
 
