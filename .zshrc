@@ -1,3 +1,4 @@
+ZSH_DISABLE_COMPFIX=true
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
 
@@ -7,12 +8,10 @@ ZSH=$HOME/.oh-my-zsh
 # time that oh-my-zsh is loaded.
 ZSH_THEME="duke"
 
-# Example aliases
+# aliases
 alias dotfiles="cd ~/projects/dotfiles"
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
-
-# aliases
 alias pipeline='rubocop; brakeman; rails_best_practices; rspec'
 alias g='git'
 alias up='docker-compose up'
@@ -21,6 +20,9 @@ alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
 alias position="git fetch --prune && git checkout devel && git rebase origin/devel && (git branch --merged | egrep -v \"(^\*|master|devel)\" | xargs git branch -d)"
 alias readmyenv="export \$(grep -v '^#' .env | xargs)"
+
+# autocomplete
+zstyle ':completion:*' menu select
 
 # Set to this to use case-sensitive completion
 # CASE_SENSITIVE="true"
@@ -38,7 +40,7 @@ alias readmyenv="export \$(grep -v '^#' .env | xargs)"
 # COMPLETION_WAITING_DOTS="true"
 
 # PLUGINS
-plugins=(git lol archlinux)
+plugins=(git lol asdf archlinux)
 
 source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
@@ -75,9 +77,3 @@ notes() {
     cat - >> "$HOME/notes.md"
   fi
 }
-
-#
-# asdf config
-#
-. "$HOME/.asdf/asdf.sh"
-. "$HOME/.asdf/completions/asdf.bash"
