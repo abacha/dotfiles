@@ -1,11 +1,6 @@
 ZSH_DISABLE_COMPFIX=true
 # Path to your oh-my-zsh configuration.
 ZSH=$HOME/.oh-my-zsh
-
-# Set name of the theme to load.
-# Look in ~/.oh-my-zsh/themes/
-# Optionally, if you set this to "random", it'll load a random theme each
-# time that oh-my-zsh is loaded.
 ZSH_THEME="duke"
 
 # aliases
@@ -18,20 +13,13 @@ alias up='docker-compose up'
 alias upb='docker-compose up --build'
 alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
-alias position="git fetch --prune && git checkout devel && git rebase origin/devel && (git branch --merged | egrep -v \"(^\*|master|devel)\" | xargs git branch -d)"
-alias readmyenv="export \$(grep -v '^#' .env | xargs)"
+alias readmyenv="set -o allexport && source .env && set +o allexport"
 
 # autocomplete
-zstyle ':completion:*' menu select
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
-# Set to this to use case-sensitive completion
-# CASE_SENSITIVE="true"
-
-# Comment this out to disable weekly auto-update checks
-# DISABLE_AUTO_UPDATE="true"
-
-# Uncomment following line if you want to disable colors in ls
-# DISABLE_LS_COLORS="true"
+autoload -U add-zsh-hook
 
 # Uncomment following line if you want to disable autosetting terminal title.
 # DISABLE_AUTO_TITLE="true"
@@ -40,18 +28,31 @@ zstyle ':completion:*' menu select
 # COMPLETION_WAITING_DOTS="true"
 
 # PLUGINS
-plugins=(git lol asdf archlinux)
+plugins=(
+  1password
+  bundler
+  docker
+  docker-compose
+  git
+  gitfast
+  jsontools
+  rails
+  ruby
+  sudo
+  asdf
+  archlinux
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+  #zsh-autocomplete
+)
 
 source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
 # Customize to your needs...
-export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/usr/bin/core_perl
-export PATH=$PATH:~/.xmonad/bin
-export PATH=$HOME/bin:$PATH
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 export EDITOR=vim
 
-[[ -s $HOME/.tmuxinator/scripts/tmuxinator ]] && source $HOME/.tmuxinator/scripts/tmuxinator
 export PAGER=most
 export MANPAGER=most
 export TERM=xterm-256color
@@ -63,8 +64,6 @@ ttyctl -f
 
 bindkey -v
 bindkey '^r' history-incremental-search-backward
-
-unset GREP_OPTIONS
 
 notes() {
   if [ ! -z "$1" ]; then

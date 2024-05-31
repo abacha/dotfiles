@@ -32,3 +32,5 @@
 	default = matching
 [branch]
 	autosetuprebase = always
+[rebase]
+  autosquash = true

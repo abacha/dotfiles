@@ -16,19 +16,22 @@ Plugin 'VundleVim/Vundle.vim'
 
 " Bundles
 Plugin 'altercation/vim-colors-solarized'
-Plugin 'kchmck/vim-coffee-script'
+Plugin 'kchmck/vim-coffee-script'           " formatter: coffee script
 Plugin 'abacha/ctrlp.vim'                   " fuzzy finder
 Plugin 'mattn/gist-vim'                     " create gists
 Plugin 'mattn/webapi-vim'                   " dependency: gist-vim
 Plugin 'leafgarland/typescript-vim'         " formatter: typescript
 Plugin 'tpope/vim-haml'                     " formatter: haml
-Plugin 'tpope/vim-endwise'
+Plugin 'slim-template/vim-slim.git'         " formatter: slim
+Plugin 'tpope/vim-endwise'                  " auto close blocks
 Plugin 'tpope/vim-fugitive'                 " git helpers
 Plugin 'tpope/vim-eunuch'                   " unix shell
 Plugin 'tpope/vim-tbone'                    " tmux commands
 Plugin 'airblade/vim-gitgutter'             " git diff in sign col
 Plugin 'scrooloose/nerdtree'                " source tree file
 Plugin 'mileszs/ack.vim'                    " search in files
+Plugin 'kdheepak/lazygit.nvim'              " lazygit
+Plugin 'neoclide/coc.nvim', {'branch': 'release'}
 call vundle#end()            " required
 
 filetype plugin indent on
@@ -36,7 +39,7 @@ filetype plugin indent on
 let g:netrw_home="~/.vim/backup"
 
 " Open vimrc with <leader>v
-nmap <leader>v :edit $MYVIMRC<CR>
+nmap <leader>v :edit ~/.vimrc<CR>
 nmap <leader>sv :source $MYVIMRC<cr>
 
 if &t_Co > 2 || has("gui_running")
@@ -45,6 +48,8 @@ if &t_Co > 2 || has("gui_running")
 endif
 
 autocmd BufWritePre * :%s/\s\+$//e
+
+autocmd BufNewFile,BufRead *.slim setlocal filetype=slim
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " COLORS
@@ -82,7 +87,7 @@ set smarttab
 
 set backspace=indent,eol,start
 set listchars=tab:▸\ ,eol:¬,trail:·,precedes:«,extends:»
-set textwidth=80
+set textwidth=120
 set linebreak
 set showbreak=…
 
@@ -107,7 +112,7 @@ set wildmode=list:longest
 set shortmess=atI
 set timeoutlen=500
 set wrap
-set wrapmargin=80
+set wrapmargin=120
 set visualbell "no crazy beeping
 set hidden
 set title
@@ -131,6 +136,7 @@ function! MapCR()
 endfunction
 call MapCR()
 nnoremap <leader><leader> ^
+nnoremap \\ $
 
 set completeopt=menu,menuone,longest
 set pumheight=10
