@@ -13,24 +13,27 @@
 [dude]
 	interval = 60
 [alias]
-  h = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
-  st = status
-  s = status -s
-  amend = commit --amend
   a = add
-  co = checkout
+  amend = commit --amend
+  ap = add --patch
+  b = branch
   ci = commit -m
+  co = checkout
   dc = diff --cached
   di = diff
-  b = branch
-  ap = add --patch
-  sm = submodule
-  rb = rebase
-  l = log --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
   fp = fetch --prune
+  h = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  l = log --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  rb = rebase
+  rbm = rebase origin/master
+  s = status -s
+  st = status
+  pop = stash pop
 [push]
 	default = matching
 [branch]
 	autosetuprebase = always
 [rebase]
   autosquash = true
+[pull]
+	rebase = true
