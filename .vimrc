@@ -10,7 +10,7 @@ set fileencoding=utf-8
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 call plug#begin('~/.vim/plugged')
-Plug 'altercation/vim-colors-solarized'
+Plug 'altercation/vim-colors-solarized'   " solarized theme
 Plug 'mattn/gist-vim'                     " create gists
 Plug 'mattn/webapi-vim'                   " dependency: gist-vim
 Plug 'tpope/vim-endwise'                  " auto close blocks
@@ -34,13 +34,9 @@ call plug#end()
 " Commands
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 filetype plugin indent on
-" Open vimrc with <leader>v
-nmap <leader>v :edit ~/.vimrc<CR>
-nmap <leader>sv :source $MYVIMRC<cr>
 
 if &t_Co > 2 || has("gui_running")
   set hlsearch
-  nmap <silent> <leader>h :silent :nohlsearch<CR>
 endif
 
 autocmd BufWritePre * :%s/\s\+$//e
@@ -64,14 +60,17 @@ set nofoldenable
 set foldlevel=1
 autocmd InsertEnter * if !exists('w:last_fdm') | let w:last_fdm=&foldmethod | setlocal foldmethod=manual | endif
 autocmd InsertLeave,WinLeave * if exists('w:last_fdm') | let &l:foldmethod=w:last_fdm | unlet w:last_fdm | endif
-nnoremap <space> za
 
+
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" CONFIGS
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Tab spacing/size
-set tabstop=2          " number of spaces on tab
-set softtabstop=2      " number of spaces on tab
-set shiftwidth=2       " number of spaces to indent
-set expandtab          " convert tabs to spaces
-set smarttab           " insert tabs on the start of a line according to shiftwidth
+set tabstop=2                             " number of spaces on tab
+set softtabstop=2                         " number of spaces on tab
+set shiftwidth=2                          " number of spaces to indent
+set expandtab                             " convert tabs to spaces
+set smarttab                              " insert tabs on the start of a line according to shiftwidth
 
 set backspace=indent,eol,start
 set listchars=tab:▸\ ,eol:¬,trail:·,precedes:«,extends:»
@@ -86,22 +85,22 @@ set scrolloff=8
 set formatprg=par\ -TbgqRw80
 set autoindent
 set smartindent
-set ignorecase        " ignore case when searching
-set smartcase         " ignore case if search pattern is lowercase
-set incsearch         " show search matches as you type
-set showmatch         " highlight matching [{()}]
+set ignorecase                            " ignore case when searching
+set smartcase                             " ignore case if search pattern is lowercase
+set incsearch                             " show search matches as you type
+set showmatch                             " highlight matching [{()}]
 set matchtime=2
-set ruler             " show cursor pos on status bar
-set number            " show line number
-set relativenumber    " show relative line number
-set autoread          " auto reload file if changed outside vim
-set wildmenu          " show list of matches when tab completing
+set ruler                                 " show cursor pos on status bar
+set number                                " show line number
+set relativenumber                        " show relative line number
+set autoread                              " auto reload file if changed outside vim
+set wildmenu                              " show list of matches when tab completing
 set wildmode=list:longest
-set shortmess=atI     " shorten messages
+set shortmess=atI                         " shorten messages
 set timeoutlen=500
 set wrap
 set wrapmargin=120
-set visualbell       " no crazy beeping
+set visualbell                            " no crazy beeping
 set hidden
 set title
 set cc=+1
@@ -110,44 +109,23 @@ command! -nargs=* Wrap set wrap linebreak nolist
 set backupdir=~/.vim/backup,~/tmp,/var/tmp,/tmp
 set directory=~/.vim/backup,~/tmp,/var/tmp,/tmp
 
-" %% as current dir
-cnoremap %% <C-R>=expand("%:h")."/"<CR>
-" <l>cb as buffer delete
-cnoremap cb 1,100bdelete
-" %f as current file
-cnoremap %f <C-R>=expand("%")<CR>
-
-" Clear the search buffer when hitting return
-function! MapCR()
-  nnoremap <cr> :nohlsearch<cr>:redraw!<cr>
-endfunction
-call MapCR()
-nnoremap <leader><leader> ^
-nnoremap \\ $
 
 set completeopt=menu,menuone,longest
 set pumheight=10
+set wildignore+=*/.hg/*,*/.svn/*,*.o,moc_*.cpp,*.exe,*.qm,.gitkeep,.DS_Store
 
-set wildignore+=*/.hg/*,*/.svn/*
-set wildignore+=*.o,moc_*.cpp,*.exe,*.qm
-set wildignore+=.gitkeep,.DS_Store
-
-" Toggle paste mode with <l>p
+" Toggle paste mode with <lead>p
 set pastetoggle=<leader>p
 function! PasteCB()
   set paste
   set nopaste
 endfunction
 
-" Switch buffers with <leader>ea
-map <leader>ea :b#<CR>
 
 " Save/quit typos
 cab W w| cab Q q| cab Wq wq| cab wQ wq| cab WQ wq| cab Bd bd| cab Wa wa| cab WA wa| cab X x
 
 autocmd CursorHold * checktime
-
-inoremap jj <esc>
 
 " Keep line index when reopening a file
 autocmd BufReadPost *
@@ -158,21 +136,15 @@ autocmd BufReadPost *
 " Sudo to write
 cnoremap w!! w !sudo tee % >/dev/null
 
-" Toggle invisible characters
-map <leader>l :set list!<CR>
-
-imap <c-l> <space>=><space>
-map <leader>e :edit %%
-
 
 " set winwidth=84
 " set winheight=10
 " set winminheight=10
 " set winheight=999
 
-"""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " WINDOW MANAGEMENT   "
-"""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " Resize
 noremap <Up> <C-w>+
@@ -249,10 +221,65 @@ autocmd FileType nerdtree cnoreabbrev <buffer> bd <nop>
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " KeyBinds
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Open vimrc with <lead>v
+nnoremap <leader>v :edit ~/.vimrc<CR>
+
+" Reload vimrc with <lead>sv
+nnoremap <leader>sv :source $MYVIMRC<CR>
+
+" Clear buffer with <lead>c
 nnoremap <leader>c :bufdo :bd<CR>
-nnoremap <Tab> <c-w><c-w><c-w>=
+
+" Navigate on panes with tab
+nnoremap <Tab> <c-w>w
+
+" Open NERDTree with <C-n>
 nnoremap <C-n> :NERDTreeToggle<CR>
-inoremap <C-@> <C-N>
+
+" Previous tab with <F3>
 nnoremap <F3> :tabprevious<CR>
-nnoremap <F4> :tabNext<CR>
+
+" Next tab with <F4>
+nnoremap <F4> :tabnext<CR>
+
+" Copy selection to clipboard with <C-y>
 vnoremap <C-y> :%y+<CR>
+
+" Open Copilot with <lead>gc
+nnoremap <leader>gc :CopilotChat<CR>
+
+" %% as current dir
+cnoremap %% <C-R>=expand("%:h")."/"<CR>
+
+" <lead>cb as buffer delete
+cnoremap cb 1,100bdelete
+
+" %f as current file
+cnoremap %f <C-R>=expand("%")<CR>
+
+" Clear the search buffer when hitting return
+nnoremap <cr> :silent! nohlsearch<cr>|silent! redraw!
+
+" Move to start of line with <lead><lead>
+nnoremap <leader><leader> ^
+
+" Move to end of line with \\
+nnoremap \\ $
+
+" Switch buffers with <leader>ea
+nnoremap <leader>ea :b#<CR>
+
+" Toggle fold with <space>
+nnoremap <space> za
+
+" Toggle invisible characters
+nnoremap <leader>l :set list!<CR>
+
+" Use <C-l> to insert " => "
+imap <c-l> <space>=><space>
+
+" Use <lead>e to open a file in new tab
+map <leader>e :edit %%
+
+" Map jj to <esc>
+inoremap jj <esc>
