@@ -1,5 +1,8 @@
 #!/bin/bash
 
+NODE_VERSION=20
+RUBY_VERSION=3.2.5
+
 # Function to install basic packages
 install_basic_packages() {
     echo "Installing basic packages..."
@@ -18,7 +21,7 @@ setup_docker() {
 # Function to setup Node.js
 setup_node() {
     echo "Setting up Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo -E bash -
     sudo apt install -y nodejs
 }
 
@@ -37,9 +40,15 @@ setup_neovim() {
 # Function to setup ASDF
 setup_asdf() {
     echo "Setting up ASDF..."
-    sudo apt install -y openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
     git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1
+}
+
+# Function to setup Ruby
+setup_ruby() {
+    sudo apt install -y openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
     asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
+    asdf install ruby $RUBY_VERSION
+    asdf global ruby $RUBY_VERSION
 }
 
 # Function to setup Zsh
@@ -65,6 +74,8 @@ create_symlinks() {
     ln -sf ~/dotfiles/.vimrc ~/
     ln -sf ~/dotfiles/.zshrc ~/
     ln -sf ~/dotfiles/.tmux.conf ~/
+    mkdir -p ~/.config
+    ln -sf ~/dotfiles/tmuxinator ~/.config/
     ln -sf ~/dotfiles/.gitconfig ~/
     ln -sf ~/dotfiles/.inputrc ~/
     ln -sf ~/dotfiles/.pryrc ~/
@@ -78,6 +89,12 @@ setup_tmux() {
     git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 }
 
+# Function to setup Tmuxinator
+setup_tmuxinator() {
+    echo "Setting up Tmuxinator..."
+    gem install tmuxinator
+}
+
 # Main function to orchestrate the setup
 main() {
     install_basic_packages
@@ -85,10 +102,17 @@ main() {
     setup_node
     setup_neovim
     setup_asdf
+    setup_ruby
     setup_zsh
     create_symlinks
     setup_tmux
+    setup_tmuxinator
 }
 
-# Execute the main function
-main
+# If no args are passed, run the main function
+if [ $# -eq 0 ]; then
+    main
+else
+    "$1"
+fi
+exit 0
