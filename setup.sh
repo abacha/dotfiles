@@ -9,6 +9,7 @@ install_basic_packages() {
 # Function to setup Docker
 setup_docker() {
     echo "Setting up Docker..."
+    curl -sSL https://get.docker.com/ | sh
     sudo apt install -y docker-compose
     sudo gpasswd -a $USER docker
     newgrp docker
@@ -47,7 +48,7 @@ setup_zsh() {
     chsh --s /bin/zsh
 
     echo "Installing Oh-My-Zsh..."
-    #sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
     echo "Installing Powerlevel10k theme..."
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
