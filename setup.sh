@@ -1,41 +1,93 @@
-sudo apt install -y tmux vim zsh git ack
+#!/bin/bash
 
-# SETUP RVM
-#gpg --keyserver keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-#\curl -sSL https://get.rvm.io | bash -s stable --ruby
+# Function to install basic packages
+install_basic_packages() {
+    echo "Installing basic packages..."
+    sudo apt install -y tmux vim zsh git most make build-essential
+}
 
-# SETUP ASDF
+# Function to setup Docker
+setup_docker() {
+    echo "Setting up Docker..."
+    sudo apt install -y docker-compose
+    sudo gpasswd -a $USER docker
+    newgrp docker
+}
 
-# SETUP OH-MY-ZSH
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+# Function to setup Node.js
+setup_node() {
+    echo "Setting up Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt install -y nodejs
+}
 
-# SETUP VIMPLUG
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-sudo apt install ripgrep
-sudo pacman -S ripgrep
+# Function to setup Neovim
+setup_neovim() {
+    echo "Setting up Neovim..."
+    sudo add-apt-repository ppa:neovim-ppa/unstable -y
+    sudo apt install neovim -y
 
+    echo "Installing Vim-Plug..."
+    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    sudo apt install ripgrep -y
+}
 
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+# Function to setup ASDF
+setup_asdf() {
+    echo "Setting up ASDF..."
+    sudo apt install -y openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1
+    asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
+}
 
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+# Function to setup Zsh
+setup_zsh() {
+    echo "Setting up Zsh..."
+    chsh --s /bin/zsh
 
-git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autocomplete                                                                                 1 ↵
+    echo "Installing Oh-My-Zsh..."
+    #sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-ln -sf ~/dotfiles/.vimrc ~/
-ln -sf ~/dotfiles/.zshrc ~/
-ln -sf ~/dotfiles/.tmux.conf ~/
-ln -sf ~/dotfiles/.gitconfig ~/
-ln -sf ~/dotfiles/.inputrc ~/
-ln -sf ~/dotfiles/.pryrc ~/
+    echo "Installing Powerlevel10k theme..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
-cp duke.zsh-theme ~/.oh-my-zsh/themes/
+    echo "Installing Zsh plugins..."
+    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+    git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autocomplete
+}
 
+# Function to create symbolic links for dotfiles
+create_symlinks() {
+    echo "Creating symbolic links for dotfiles..."
+    ln -sf ~/dotfiles/.vimrc ~/
+    ln -sf ~/dotfiles/.zshrc ~/
+    ln -sf ~/dotfiles/.tmux.conf ~/
+    ln -sf ~/dotfiles/.gitconfig ~/
+    ln -sf ~/dotfiles/.inputrc ~/
+    ln -sf ~/dotfiles/.pryrc ~/
+    mkdir -p ~/.config/nvim
+    ln -sf ~/dotfiles/init.vim ~/.config/nvim
+}
 
-git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
-chsh --s /bin/zsh
+# Function to setup Tmux
+setup_tmux() {
+    echo "Setting up Tmux..."
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+}
 
+# Main function to orchestrate the setup
+main() {
+    install_basic_packages
+    setup_docker
+    setup_node
+    setup_neovim
+    setup_asdf
+    setup_zsh
+    create_symlinks
+    setup_tmux
+}
 
-# SETUP TMUX
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+# Execute the main function
+main
