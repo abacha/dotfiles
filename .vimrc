@@ -10,18 +10,19 @@ set fileencoding=utf-8
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 call plug#begin('~/.vim/plugged')
-Plug 'altercation/vim-colors-solarized'   " solarized theme
-Plug 'mattn/gist-vim'                     " create gists
-Plug 'mattn/webapi-vim'                   " dependency: gist-vim
-Plug 'tpope/vim-endwise'                  " auto close blocks
-Plug 'tpope/vim-fugitive'                 " git helpers
-Plug 'tpope/vim-eunuch'                   " unix shell
-Plug 'roxma/vim-tmux-clipboard'           " tmux clipboard
-Plug 'airblade/vim-gitgutter'             " git diff in sign col
-Plug 'scrooloose/nerdtree'                " source tree file
-Plug 'nvim-telescope/telescope.nvim'      " search in files
-Plug 'kdheepak/lazygit.nvim'              " lazygit
-Plug 'sheerun/vim-polyglot'               " Syntax highlight
+Plug 'altercation/vim-colors-solarized'               " solarized theme
+Plug 'mattn/gist-vim'                                 " create gists
+Plug 'mattn/webapi-vim'                               " dependency: gist-vim
+Plug 'tpope/vim-endwise'                              " auto close blocks
+Plug 'tpope/vim-fugitive'                             " git helpers
+Plug 'tpope/vim-eunuch'                               " unix shell
+Plug 'roxma/vim-tmux-clipboard'                       " tmux clipboard
+Plug 'airblade/vim-gitgutter'                         " git diff in sign col
+Plug 'scrooloose/nerdtree'                            " source tree file
+Plug 'nvim-telescope/telescope.nvim'                  " search in files
+Plug 'nvim-telescope/telescope-live-grep-args.nvim'   " grep in files
+Plug 'kdheepak/lazygit.nvim'                          " lazygit
+Plug 'sheerun/vim-polyglot'                           " Syntax highlight
 
 " Copilot
 Plug 'nvim-lua/plenary.nvim'
@@ -210,6 +211,8 @@ nnoremap <leader>ff <cmd>Telescope find_files<cr>
 nnoremap <leader>fg <cmd>Telescope live_grep<cr>
 nnoremap <leader>fb <cmd>Telescope buffers<cr>
 nnoremap <leader>fh <cmd>Telescope help_tags<cr>
+nnoremap <leader>fF :execute 'Telescope find_files default_text=' . "'" . expand('<cword>')<cr>
+nnoremap <leader>fG :execute 'Telescope live_grep default_text=' . expand('<cword>')<cr>
 
 
 """""""""""""

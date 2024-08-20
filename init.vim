@@ -9,5 +9,6 @@ require('telescope').setup{
     file_ignore_patterns = {"node_modules", ".git", "dist", "tmp", "vendor", ".rubocop_todo", "log", "documentation", "coverage"}
   }
 }
+require('telescope').load_extension("live_grep_args")
 EOF
 set runtimepath^=~/.config/nvim runtimepath+=~/.config/nvim/after
