@@ -11,7 +11,7 @@ ZSH=$HOME/.oh-my-zsh
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # aliases
-alias dotfiles="cd ~/projects/dotfiles"
+alias dotfiles="cd ~/dotfiles"
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 alias pipeline='rubocop; brakeman; rails_best_practices; rspec'
