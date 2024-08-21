@@ -22,7 +22,7 @@ Plug 'scrooloose/nerdtree'                            " source tree file
 Plug 'nvim-telescope/telescope.nvim'                  " search in files
 Plug 'nvim-telescope/telescope-live-grep-args.nvim'   " grep in files
 Plug 'kdheepak/lazygit.nvim'                          " lazygit
-Plug 'sheerun/vim-polyglot'                           " Syntax highlight
+"Plug 'sheerun/vim-polyglot'                           " Syntax highlight
 
 " Copilot
 Plug 'nvim-lua/plenary.nvim'
