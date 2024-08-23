@@ -47,14 +47,14 @@ windows:
       pre: cd ~/projects/hubstaff/hubstaff-server
       panes:
         - nvim
-  - marketing:
-      layout: main-horizontal
-      pre: cd ~/projects/hubstaff/hubstaff-marketing-website
-      panes:
-        - nvim
-        - #npm run dev -- --host
   - account:
       layout: main-horizontal
       pre: cd ~/projects/hubstaff/hubstaff-account
       panes:
         - nvim
+  #- marketing:
+  #    layout: main-horizontal
+  #    pre: cd ~/projects/hubstaff/hubstaff-marketing-website
+  #    panes:
+  #      - nvim
+  #      - #npm run dev -- --host
