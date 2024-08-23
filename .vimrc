@@ -48,7 +48,7 @@ autocmd BufNewFile,BufRead *.slim setlocal filetype=slim
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax enable
 set t_Co=256
-set background=dark
+set background=light
 colorscheme solarized
 
 
