@@ -1,7 +1,3 @@
-set runtimepath^=~/.vim runtimepath+=~/.vim/after
-let &packpath = &runtimepath
-source ~/.vimrc
-lua << EOF
 require('copilot').setup({
   panel = {
     enabled = true,
@@ -19,8 +15,8 @@ require('copilot').setup({
     },
   },
   suggestion = {
-    enabled = true,
-    auto_trigger = true,
+    enabled = false,
+    auto_trigger = false,
     hide_during_completion = true,
     debounce = 75,
     keymap = {
@@ -35,12 +31,3 @@ require('copilot').setup({
 })
 
 require("CopilotChat").setup {}
-require('telescope').setup{
-  defaults = {
-    file_ignore_patterns = {"node_modules", ".git", "dist", "tmp", "vendor", ".rubocop_todo", "log", "documentation", "coverage"},
-    path_display = {"truncate"}
-  }
-}
-require('telescope').load_extension("live_grep_args")
-EOF
-set runtimepath^=~/.config/nvim runtimepath+=~/.config/nvim/after

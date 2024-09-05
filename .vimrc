@@ -48,7 +48,7 @@ autocmd BufNewFile,BufRead *.slim setlocal filetype=slim
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax enable
 set t_Co=256
-set background=light
+set background=dark
 colorscheme solarized
 
 
@@ -208,10 +208,11 @@ let g:github_token = $GITHUB_TOKEN
 " Telescope "
 """""""""""""
 nnoremap <leader>ff <cmd>Telescope find_files<cr>
-nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+"nnoremap <leader>fg <cmd>Telescope live_grep<cr>
+nnoremap <leader>fg :lua require("telescope").extensions.live_grep_args.live_grep_args()<cr>
 nnoremap <leader>fb <cmd>Telescope buffers<cr>
 nnoremap <leader>fh <cmd>Telescope help_tags<cr>
-nnoremap <leader>fF :execute 'Telescope find_files default_text=' . "'" . expand('<cword>')<cr>
+nnoremap <leader>fF :execute 'Telescope find_files default_text=' . expand('<cword>')<cr>
 nnoremap <leader>fG :execute 'Telescope live_grep default_text=' . expand('<cword>')<cr>
 
 
@@ -246,7 +247,7 @@ nnoremap <F3> :tabprevious<CR>
 nnoremap <F4> :tabnext<CR>
 
 " Copy selection to clipboard with <C-y>
-vnoremap <C-y> :%y+<CR>
+vnoremap <C-y> "+y
 
 " Open Copilot with <lead>gc
 nnoremap <leader>gc :CopilotChat<CR>
