@@ -30,4 +30,12 @@ require('copilot').setup({
   },
 })
 
-require("CopilotChat").setup {}
+require("CopilotChat").setup ({
+  context = true,
+  mappings = {
+    reset = {
+      normal = '',
+      insert = '<C-l>'
+    },
+  }
+})
