@@ -1,7 +1,7 @@
 require('copilot').setup({
   panel = {
     enabled = true,
-    auto_refresh = false,
+    auto_refresh = true,
     keymap = {
       jump_prev = "[[",
       jump_next = "]]",
@@ -31,7 +31,9 @@ require('copilot').setup({
 })
 
 require("CopilotChat").setup ({
-  context = true,
+  context = {
+    enabled = true  -- Ajuste como tabela
+  },
   mappings = {
     reset = {
       normal = '',

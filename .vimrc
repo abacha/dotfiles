@@ -10,6 +10,8 @@ set fileencoding=utf-8
 " PLUGINS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 call plug#begin('~/.vim/plugged')
+Plug 'nvim-lua/plenary.nvim'
+
 Plug 'altercation/vim-colors-solarized'               " solarized theme
 Plug 'mattn/gist-vim'                                 " create gists
 Plug 'mattn/webapi-vim'                               " dependency: gist-vim
@@ -22,12 +24,17 @@ Plug 'scrooloose/nerdtree'                            " source tree file
 Plug 'nvim-telescope/telescope.nvim'                  " search in files
 Plug 'nvim-telescope/telescope-live-grep-args.nvim'   " grep in files
 Plug 'kdheepak/lazygit.nvim'                          " lazygit
-"Plug 'sheerun/vim-polyglot'                           " Syntax highlight
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 
 " Copilot
-Plug 'nvim-lua/plenary.nvim'
 Plug 'zbirenbaum/copilot.lua'
 Plug 'CopilotC-Nvim/CopilotChat.nvim'
+
+" CoC (autocompletion/linting)
+Plug 'neoclide/coc.nvim', {'branch': 'release'}       " autocompletion and linting
+Plug 'neoclide/coc-eslint'                            " javascript linting
+Plug 'neoclide/coc-solargraph'                        " ruby linting and autocompletion
+
 call plug#end()
 
 
@@ -42,6 +49,7 @@ endif
 
 autocmd BufWritePre * :%s/\s\+$//e
 autocmd BufNewFile,BufRead *.slim setlocal filetype=slim
+autocmd FileType asciidoc setlocal syntax=off
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " COLORS
@@ -105,6 +113,7 @@ set visualbell                            " no crazy beeping
 set hidden
 set title
 set cc=+1
+set statusline=%F%m%r%h%w\ [%l/%L]\ [%v]
 
 command! -nargs=* Wrap set wrap linebreak nolist
 set backupdir=~/.vim/backup,~/tmp,/var/tmp,/tmp
@@ -116,11 +125,16 @@ set pumheight=10
 set wildignore+=*/.hg/*,*/.svn/*,*.o,moc_*.cpp,*.exe,*.qm,.gitkeep,.DS_Store
 
 " Toggle paste mode with <lead>p
-set pastetoggle=<leader>p
-function! PasteCB()
-  set paste
-  set nopaste
+function! TogglePaste()
+    if(&paste == 0)
+        set paste
+        echo "Paste Mode Enabled"
+    else
+        set nopaste
+        echo "Paste Mode Disabled"
+    endif
 endfunction
+map <leader>p :call TogglePaste()<cr>
 
 
 " Save/quit typos
@@ -172,29 +186,25 @@ function! AlternateForCurrentFile()
   let current_file = expand("%")
   let new_file = current_file
   let in_spec = match(current_file, '^spec/') != -1
+  let in_spec_lib = match(current_file, '^spec/lib/') != -1
   let going_to_spec = !in_spec
-  let in_app = match(current_file, '\<business\>') != -1 || match(current_file, '\<controllers\>') != -1 || match(current_file, '\<models\>') != -1 || match(current_file, '\<views\>') != -1 || match(current_file, '\<helpers\>') != -1
-  let in_lib = match(current_file, '^lib/') != -1
 
   if going_to_spec
-    if in_app
+    if match(current_file, '^app/') != -1
       let new_file = substitute(new_file, '^app/', '', '')
-    elseif in_lib
-      let new_file = substitute(new_file, '^lib/', '', '')
-    endif
-    let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
-    if in_lib
-      let new_file = 'spec/lib/' . new_file
-    else
+      let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
       let new_file = 'spec/' . new_file
+    else
+      let new_file = substitute(new_file, '^lib/', '', '')
+      let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
+      let new_file = 'spec/lib/' . new_file
     endif
   else
     let new_file = substitute(new_file, '_spec\.rb$', '.rb', '')
-    let new_file = substitute(new_file, '^spec/', '', '')
-    if in_app
-      let new_file = 'app/' . new_file
-    elseif in_lib
-      let new_file = 'lib/' . new_file
+    if in_spec_lib
+      let new_file = substitute(new_file, '^spec/lib/', 'lib/', '')
+    else
+      let new_file = substitute(new_file, '^spec/', 'app/', '')
     endif
   endif
 
@@ -219,12 +229,12 @@ let g:github_token = $GITHUB_TOKEN
 """""""""""""
 " Telescope "
 """""""""""""
+nnoremap <leader>fr <cmd>Telescope resume<cr>
 nnoremap <leader>ff <cmd>Telescope find_files<cr>
-"nnoremap <leader>fg <cmd>Telescope live_grep<cr>
 nnoremap <leader>fg :lua require("telescope").extensions.live_grep_args.live_grep_args()<cr>
 nnoremap <leader>fb <cmd>Telescope buffers<cr>
 nnoremap <leader>fh <cmd>Telescope help_tags<cr>
-nnoremap <leader>fF :execute 'Telescope find_files default_text=' . expand('<cword>')<cr>
+nnoremap <leader>fF :execute 'Telescope git_files default_text=' . expand('<cword>')<cr>
 nnoremap <leader>fG :execute 'Telescope live_grep default_text=' . expand('<cword>')<cr>
 
 
@@ -274,7 +284,8 @@ cnoremap cb 1,100bdelete
 cnoremap %f <C-R>=expand("%")<CR>
 
 " Clear the search buffer when hitting return
-nnoremap <cr> :silent! nohlsearch<cr>|silent! redraw!
+nnoremap <expr> <cr> getwinvar(win_getid(), '&buftype') ==# 'quickfix' ? "\<cr>" : ":silent! nohlsearch\<cr>:silent! redraw!\<cr>"
+
 
 " Move to start of line with <lead><lead>
 nnoremap <leader><leader> ^
@@ -291,11 +302,11 @@ nnoremap <space> za
 " Toggle invisible characters
 nnoremap <leader>l :set list!<CR>
 
-" Use <C-l> to insert " => "
-imap <c-l> <space>=><space>
-
 " Use <lead>e to open a file in new tab
 map <leader>e :edit %%
 
 " Map jj to <esc>
 inoremap jj <esc>
+
+" Map <C-i> to accept copilot suggestion
+imap <silent><script><expr> <C-i> copilot#Accept("\<CR>")

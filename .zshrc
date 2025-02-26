@@ -61,7 +61,7 @@ export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
 export EDITOR=nvim
 export PAGER=most
 export MANPAGER=most
-export TERM=xterm-256color
+export BROWSER=wslview
 
 # Avoid storing sensitive information directly in the .zshrc file
 # export GITHUB_TOKEN=your_token_here
@@ -83,8 +83,17 @@ notes() {
 
 # Powerlevel10k Configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 
 # Hubstaff Configuration
 export PATH="$HOME/.sre-toolkit/bin:$PATH"
 export HUBSTAFF_HOME=$HOME/projects/hubstaff/
 alias hub-start='hs-local services start && hs-local account start && hs-local server start'
+
+# pnpm
+export PNPM_HOME="/home/abacha/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

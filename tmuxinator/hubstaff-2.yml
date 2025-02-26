@@ -49,12 +49,11 @@ windows:
       layout: main-vertical
       panes:
         - docker exec -it hs-server bundle exec rails c
-  - test:
+  - container_bash:
       layout: main-vertical
       panes:
         - docker exec -it hs-server bash
-  - logs:
-      layout: horizontal
-      panes:
-        - docker logs -f hs-account
-        - docker logs -f hs-server
+  - remote_console:
+    layout: main-vertical
+  - marketing_server:
+    layout: main-vertical

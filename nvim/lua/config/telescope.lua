@@ -1,10 +1,23 @@
 local telescope = require("telescope")
---local lga_actions = require("telescope-live-grep-args.actions")
+local lga_actions = require("telescope-live-grep-args.actions")
+local actions = require('telescope.actions')
 
 telescope.setup {
   defaults = {
-    file_ignore_patterns = {"node_modules", ".git", "dist", "tmp", "vendor", ".rubocop_todo", "log", "documentation", "coverage"},
-    path_display = {"truncate"}
+    --file_ignore_patterns = {"node_modules/", ".git/", "dist/", "tmp/", "vendor/", ".rubocop_todo", "*.log", "coverage/"},
+    path_display = {"truncate"},
+    hidden = true,
+    mappings = {
+      i = {
+        ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+      },
+      n = {
+        ["<C-e>"] = actions.delete_buffer,
+        ["<C-q>"] = actions.smart_send_to_qflist + actions.open_qflist,
+        ["<C-Down>"] = actions.cycle_history_next,
+        ["<C-Up>"] = actions.cycle_history_prev,
+      },
+    },
   },
   extensions = {
     live_grep_args = {
