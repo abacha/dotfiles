@@ -68,6 +68,15 @@ export BROWSER=wslview
 
 ttyctl -f
 
+# asdf Configuration
+export PATH="$HOME/.asdf/bin:$PATH"
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+export ASDF_DATA_DIR="$HOME/.asdf"
+# append completions to fpath
+# fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+# initialise completions with ZSH's compinit
+autoload -Uz compinit && compinit
+
 # Key Bindings
 bindkey -v
 bindkey '^r' history-incremental-search-backward
