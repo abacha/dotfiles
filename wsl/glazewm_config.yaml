@@ -87,8 +87,11 @@ workspaces:
     bind_to_monitor: 0
     keep_alive: true
   - name: '5'
+    display_name: '#5 WhatsApp'
+    bind_to_monitor: 1
+    keep_alive: true
   - name: '6'
-    display_name: "#6 Media"    
+    display_name: "#6 Media"
   - name: '7'
   - name: '8'
   - name: '9'
@@ -100,9 +103,12 @@ window_rules:
   - commands: ["move --workspace 3"]
     match:
     - window_process: { regex: "Slack" }
+  - commands: ["move --workspace 5"]
+    match:
+    - window_process: { regex: "WhatsApp" }
   - commands: ["move --workspace 6"]
     match:
-    - window_process: { regex: "Spotify" }    
+    - window_process: { regex: "Spotify" }
   - commands: ["move --workspace 9"]
     match:
     - window_process: { regex: "HubstaffClient" }

@@ -154,7 +154,7 @@ window/bar:
           @else {<i class="nf nf-md-wifi_strength_outline"></i>}
           {{ network.defaultGateway?.ssid }}
         } @else {
-          <i class="nf nf-md-wifi_strength_off_outline"></i>
+          <i class="nf nf-md-wifi_strength_off_outline"></i>{{ network.defaultInterface }}
         }
 
     template/memory:

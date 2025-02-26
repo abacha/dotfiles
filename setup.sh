@@ -49,6 +49,7 @@ setup_ruby() {
   asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
   asdf install ruby $RUBY_VERSION
   asdf global ruby $RUBY_VERSION
+  ln -sf
 }
 
 # Function to setup Zsh
@@ -79,6 +80,7 @@ create_symlinks() {
   ln -sf ~/dotfiles/.gitconfig ~/
   ln -sf ~/dotfiles/.inputrc ~/
   ln -sf ~/dotfiles/.pryrc ~/
+  ln -sf ~/dotfiles/.gemrc ~/
   mkdir -p ~/.config/nvim
   ln -sf ~/dotfiles/init.vim ~/.config/nvim
 }
