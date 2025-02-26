@@ -97,16 +97,21 @@ setup_tmuxinator() {
 
 # Main function to orchestrate the setup
 main() {
-    install_basic_packages
-    setup_docker
-    setup_node
-    setup_neovim
-    setup_asdf
-    setup_ruby
-    setup_zsh
-    create_symlinks
-    setup_tmux
-    setup_tmuxinator
+  install_basic_packages
+  setup_docker
+  setup_node
+  setup_neovim
+  setup_asdf
+  setup_ruby
+  setup_zsh
+  create_symlinks
+  setup_tmux
+  setup_tmuxinator
+
+  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null; then
+    echo "WSL detected. Installing additional packages..."
+    sudo apt install -y xclip wslu
+  fi
 }
 
 # If no args are passed, run the main function
