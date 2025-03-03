@@ -83,6 +83,7 @@ create_symlinks() {
   ln -sf ~/dotfiles/.gemrc ~/
   mkdir -p ~/.config/nvim
   ln -sf ~/dotfiles/init.vim ~/.config/nvim
+  ln -sf ~/dotfiles/tmuxinator ~/.config/
 }
 
 # Function to setup Tmux
@@ -95,6 +96,7 @@ setup_tmux() {
 setup_tmuxinator() {
   echo "Setting up Tmuxinator..."
   gem install tmuxinator
+  ln -sf ~/dotfiles/tmuxinator ~/.config/
 }
 
 # Function to setup WSL
