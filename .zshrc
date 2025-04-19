@@ -64,7 +64,9 @@ export MANPAGER=most
 export BROWSER=wslview
 
 # Avoid storing sensitive information directly in the .zshrc file
-# export GITHUB_TOKEN=your_token_here
+if [ -f "$HOME/.env" ]; then
+  source "$HOME/.env"
+fi
 
 ttyctl -f
 
