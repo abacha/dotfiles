@@ -30,10 +30,16 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'zbirenbaum/copilot.lua'
 Plug 'CopilotC-Nvim/CopilotChat.nvim'
 
-" CoC (autocompletion/linting)
-Plug 'neoclide/coc.nvim', {'branch': 'release'}       " autocompletion and linting
-Plug 'neoclide/coc-eslint'                            " javascript linting
-Plug 'neoclide/coc-solargraph'                        " ruby linting and autocompletion
+
+" nvim-cmp (Auto completion)
+Plug 'hrsh7th/nvim-cmp'                               " Completion engine
+Plug 'hrsh7th/cmp-nvim-lsp'                           " LSP source for nvim-cmp
+Plug 'hrsh7th/cmp-buffer'                             " Buffer completions
+Plug 'hrsh7th/cmp-path'                               " Path completions
+Plug 'hrsh7th/cmp-cmdline'                            " Command-line completions
+Plug 'L3MON4D3/LuaSnip'                               " Snippet engine
+Plug 'saadparwaiz1/cmp_luasnip'                       " Snippet completions
+Plug 'neovim/nvim-lspconfig'                          " LSP configurations
 
 call plug#end()
 

@@ -32,12 +32,12 @@ require('copilot').setup({
 
 require("CopilotChat").setup ({
   context = {
-    enabled = true  -- Ajuste como tabela
+    enabled = true
   },
   mappings = {
     reset = {
-      normal = '',
-      insert = '<C-l>'
+      normal = "",
+      insert = "<C-l>",
     },
   }
 })

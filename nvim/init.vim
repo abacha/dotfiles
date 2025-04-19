@@ -8,5 +8,6 @@ source ~/.vimrc
 
 lua require('config.copilot')
 lua require('config.treesitter')
-lua require('config.coc')
+"lua require('config.coc')
+lua require('config.nvim-cmp')
 lua require('config.telescope')
