@@ -1,9 +1,11 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# Disable compfix
+# Disable compfix to avoid warnings about insecure directories
 ZSH_DISABLE_COMPFIX=true
 
 # Path to your oh-my-zsh configuration
@@ -22,7 +24,7 @@ alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
 alias readmyenv="set -o allexport && source .env && set +o allexport"
 
-# Autocomplete
+# Docker autocomplete
 zstyle ':completion:*:*:docker:*' option-stacking yes
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
 
@@ -57,13 +59,13 @@ source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
 # Environment Variables
-export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+export PATH=$PATH:/usr/local/sbin:/usr/sbin:/sbin
 export EDITOR=nvim
 export PAGER=most
 export MANPAGER=most
 export BROWSER=wslview
 
-# Avoid storing sensitive information directly in the .zshrc file
+# Source environment variables from .env if it exists
 if [ -f "$HOME/.env" ]; then
   source "$HOME/.env"
 fi
@@ -94,17 +96,12 @@ notes() {
 
 # Powerlevel10k Configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 
 # Hubstaff Configuration
 export PATH="$HOME/.sre-toolkit/bin:$PATH"
 export HUBSTAFF_HOME=$HOME/projects/hubstaff/
 alias hub-start='hs-local services start && hs-local account start && hs-local server start'
 
-# pnpm
+# pnpm configuration
 export PNPM_HOME="/home/abacha/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
+[[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
