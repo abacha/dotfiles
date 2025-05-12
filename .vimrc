@@ -30,7 +30,6 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'zbirenbaum/copilot.lua'
 Plug 'CopilotC-Nvim/CopilotChat.nvim'
 
-
 " nvim-cmp (Auto completion)
 Plug 'hrsh7th/nvim-cmp'                               " Completion engine
 Plug 'hrsh7th/cmp-nvim-lsp'                           " LSP source for nvim-cmp

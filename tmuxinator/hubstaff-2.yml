@@ -57,3 +57,8 @@ windows:
     layout: main-vertical
   - marketing_server:
     layout: main-vertical
+  - logs:
+    layout: main-horizontal
+    panes:
+      - docker logs -f hs-server
+      - docker logs -f hs-account

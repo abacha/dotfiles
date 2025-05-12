@@ -48,11 +48,11 @@ plugins=(
   rails
   ruby
   sudo
-  asdf
+  # asdf
   archlinux
   zsh-autosuggestions
   zsh-syntax-highlighting
-  #zsh-autocomplete
+  # zsh-autocomplete
 )
 
 source $ZSH/oh-my-zsh.sh
