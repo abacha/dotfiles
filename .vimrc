@@ -192,6 +192,7 @@ function! AlternateForCurrentFile()
   let new_file = current_file
   let in_spec = match(current_file, '^spec/') != -1
   let in_spec_lib = match(current_file, '^spec/lib/') != -1
+  let in_spec_db = match(current_file, '^spec/db/') != -1
   let going_to_spec = !in_spec
 
   if going_to_spec
@@ -199,15 +200,21 @@ function! AlternateForCurrentFile()
       let new_file = substitute(new_file, '^app/', '', '')
       let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
       let new_file = 'spec/' . new_file
-    else
+    elseif match(current_file, '^lib/') != -1
       let new_file = substitute(new_file, '^lib/', '', '')
       let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
       let new_file = 'spec/lib/' . new_file
+    elseif match(current_file, '^db/') != -1
+      let new_file = substitute(new_file, '^db/', '', '')
+      let new_file = substitute(new_file, '\.rb$', '_spec.rb', '')
+      let new_file = 'spec/db/' . new_file
     endif
   else
     let new_file = substitute(new_file, '_spec\.rb$', '.rb', '')
     if in_spec_lib
       let new_file = substitute(new_file, '^spec/lib/', 'lib/', '')
+    elseif in_spec_db
+      let new_file = substitute(new_file, '^spec/db/', 'db/', '')
     else
       let new_file = substitute(new_file, '^spec/', 'app/', '')
     endif
