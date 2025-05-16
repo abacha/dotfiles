@@ -60,7 +60,6 @@ autocmd FileType asciidoc setlocal syntax=off
 " COLORS
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 syntax enable
-set t_Co=256
 set background=dark
 colorscheme solarized
 
@@ -156,11 +155,6 @@ autocmd BufReadPost *
 " Sudo to write
 cnoremap w!! w !sudo tee % >/dev/null
 
-
-" set winwidth=84
-" set winheight=10
-" set winminheight=10
-" set winheight=999
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " WINDOW MANAGEMENT   "
