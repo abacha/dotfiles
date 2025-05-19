@@ -292,7 +292,6 @@ cnoremap %f <C-R>=expand("%")<CR>
 " Clear the search buffer when hitting return
 nnoremap <expr> <cr> getwinvar(win_getid(), '&buftype') ==# 'quickfix' ? "\<cr>" : ":silent! nohlsearch\<cr>:silent! redraw!\<cr>"
 
-
 " Move to start of line with <lead><lead>
 nnoremap <leader><leader> ^
 
