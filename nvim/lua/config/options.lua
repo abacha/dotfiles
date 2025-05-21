@@ -49,7 +49,7 @@ vim.opt.softtabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.smarttab = true
 vim.opt.formatprg = "par -TbgqRw80"
-vim.opt.list = true
+vim.opt.list = false
 
 -- Colors
 vim.opt.background = "dark"

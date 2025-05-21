@@ -10,26 +10,24 @@ map("n", "<Down>", "<C-w>-")
 map("n", "<Left>", "<C-w>>")
 map("n", "<Right>", "<C-w><")
 
--- Atalhos úteis
-map("n", "<leader>v", ":edit $MYVIMRC<CR>")
-map("n", "<leader>sv", ":source $MYVIMRC<CR>")
-map("n", "<leader>c", ":bufdo :bd<CR>")
-map("n", "<Tab>", "<C-w>w")
-map("n", "<C-n>", ":NERDTreeToggle<CR>")
-map("n", "<F3>", ":tabprevious<CR>")
-map("n", "<F4>", ":tabnext<CR>")
-map("v", "<C-y>", '"+y')
-map("n", "<leader>gc", ":CopilotChat<CR>")
-map("c", "%%", [[<C-R>=expand("%:h")."/"<CR>]])
-map("c", "%f", [[<C-R>=expand("%")<CR>]])
-map("n", "<leader><leader>", "^")
-map("n", "\\\\", "$")
-map("n", "<leader>ea", ":b#<CR>")
-map("n", "<space>", "za")
-map("n", "<leader>l", ":set list!<CR>")
-map("n", "<leader>e", ":edit %%")
-map("i", "jj", "<Esc>")
-map("i", "<C-i>", 'copilot#Accept("<CR>")', { expr = true, silent = true, script = true })
+map("n", "<leader>v", ":edit $MYVIMRC<CR>")         -- Edit init.vim/init.lua
+map("n", "<leader>sv", ":source $MYVIMRC<CR>")      -- Source init.vim/init.lua
+map("n", "<leader>c", ":bufdo :bd<CR>")             -- Close all buffers
+map("n", "<Tab>", "<C-w>w")                         -- Switch window
+map("n", "<C-n>", ":NERDTreeToggle<CR>")            -- Toggle NERDTree
+map("n", "<F3>", ":tabprevious<CR>")                -- Go to previous tab
+map("n", "<F4>", ":tabnext<CR>")                    -- Go to next tab
+map("v", "<C-y>", '"+y')                            -- Yank to system clipboard in visual mode
+map("n", "<leader>gc", ":CopilotChat<CR>")          -- Open Copilot Chat
+map("c", "%%", [[<C-R>=expand("%:h")."/"<CR>]])     -- Insert current file's directory in command mode
+map("c", "%f", [[<C-R>=expand("%")<CR>]])           -- Insert current file's name in command mode
+map("n", "<leader><leader>", "^")                   -- Jump to first non-blank character
+map("n", "\\\\", "$")                               -- Jump to end of line
+map("n", "<leader>ea", ":b#<CR>")                   -- Switch to alternate buffer
+map("n", "<space>", "za")                           -- Toggle fold
+map("n", "<leader>l", ":set list!<CR>")             -- Toggle listchars
+map("n", "<leader>e", ":edit expand(\"%%\")")       -- Edit file in current directory
+map("i", "jj", "<Esc>")                             -- Exit insert mode with 'jj'
 
 -- Paste toggle
 vim.api.nvim_create_user_command("TogglePaste", function()
