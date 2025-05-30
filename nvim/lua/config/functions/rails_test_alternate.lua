@@ -19,5 +19,3 @@ end
 function OpenTestAlternate()
   vim.cmd("vsp " .. rails_alternate_for_current_file())
 end
-
-vim.keymap.set("n", "<leader>.", ":lua OpenTestAlternate()<cr>", { silent = true })

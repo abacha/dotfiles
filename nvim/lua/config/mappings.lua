@@ -29,6 +29,17 @@ map("n", "<leader>l", ":set list!<CR>")             -- Toggle listchars
 map("n", "<leader>e", ":edit expand(\"%%\")")       -- Edit file in current directory
 map("i", "jj", "<Esc>")                             -- Exit insert mode with 'jj'
 
+map("n", "<leader>.", ":lua OpenTestAlternate()<CR>", { silent = true })
+
+-- Clear search highlights
+map("n", "<CR>", function()
+  if vim.fn.getwinvar(vim.fn.win_getid(), "&buftype") == "quickfix" then
+    return "<CR>"
+  else
+    return ":silent! nohlsearch<CR>:silent! redraw!<CR>"
+  end
+end, { expr = true })
+
 -- Paste toggle
 vim.api.nvim_create_user_command("TogglePaste", function()
   local paste = vim.opt.paste:get()
