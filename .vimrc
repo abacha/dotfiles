@@ -32,4 +32,6 @@ Plug 'L3MON4D3/LuaSnip'                               " Snippet engine
 Plug 'saadparwaiz1/cmp_luasnip'                       " Snippet completions
 Plug 'neovim/nvim-lspconfig'                          " LSP configurations
 
+Plug 'zbirenbaum/copilot-cmp'
+
 call plug#end()

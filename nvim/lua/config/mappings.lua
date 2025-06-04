@@ -11,7 +11,7 @@ map("n", "<Left>", "<C-w>>")
 map("n", "<Right>", "<C-w><")
 
 map("n", "<leader>v", ":edit $MYVIMRC<CR>")         -- Edit init.vim/init.lua
-map("n", "<leader>sv", ":source $MYVIMRC<CR>")      -- Source init.vim/init.lua
+map("n", "<leader>sv", ":lua ReloadConfig()<CR>")      -- Source init.vim/init.lua
 map("n", "<leader>c", ":bufdo :bd<CR>")             -- Close all buffers
 map("n", "<Tab>", "<C-w>w")                         -- Switch window
 map("n", "<C-n>", ":NERDTreeToggle<CR>")            -- Toggle NERDTree

@@ -1,19 +1,6 @@
 require('copilot').setup({
-  panel = {
-    enabled = true,
-    auto_refresh = true,
-    keymap = {
-      jump_prev = "[[",
-      jump_next = "]]",
-      accept = "<CR>",
-      refresh = "gr",
-      open = "<M-CR>"
-    },
-    layout = {
-      position = "bottom", -- | top | left | right | bottom
-      ratio = 0.4
-    },
-  },
+  panel = { enabled = false, },
+  -- suggestion = { enabled = false, }
   suggestion = {
     enabled = true,
     auto_trigger = true,
