@@ -54,11 +54,11 @@ windows:
       panes:
         - docker exec -it hs-server bash
   - remote_console:
-    layout: main-vertical
+      layout: main-vertical
   - marketing_server:
-    layout: main-vertical
+      layout: main-vertical
   - logs:
-    layout: main-horizontal
-    panes:
-      - docker logs -f hs-server
-      - docker logs -f hs-account
+      layout: main-horizontal
+      panes:
+        - docker logs -f hs-server
+        - docker logs -f hs-account
