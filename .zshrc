@@ -23,6 +23,7 @@ alias upb='docker-compose up --build'
 alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
 alias readmyenv="set -o allexport && source .env && set +o allexport"
+alias docker-compose='docker compose'
 
 # Docker autocomplete
 zstyle ':completion:*:*:docker:*' option-stacking yes

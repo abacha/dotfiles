@@ -55,8 +55,6 @@ windows:
         - docker exec -it hs-server bash
   - remote_console:
       layout: main-vertical
-  - marketing_server:
-      layout: main-vertical
   - logs:
       layout: main-horizontal
       panes:

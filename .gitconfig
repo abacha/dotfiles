@@ -7,7 +7,7 @@
 	user = abacha
 	token = $GITHUB_TOKEN
 [merge]
-  tool = vim
+  tool = nvim
 [diff]
   tool = vimdiff
 [dude]
@@ -29,6 +29,7 @@
   s = status -s
   st = status
   pop = stash pop
+  sq = rebase HEAD~20 -i --autosquash
 [push]
 	default = matching
 [branch]
