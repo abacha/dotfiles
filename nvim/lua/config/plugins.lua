@@ -30,7 +30,6 @@ return require('packer').startup(function(use)
   -- Copilot and AI
   use 'zbirenbaum/copilot.lua'
   use 'CopilotC-Nvim/CopilotChat.nvim'
-  use 'olimorris/codecompanion.nvim'
 
   -- Completion
   use 'hrsh7th/nvim-cmp'
