@@ -1,10 +1,5 @@
-require("config.preconfig")
-
--- Add legacy Vim config
-vim.cmd("set runtimepath^=~/.vim")
-vim.cmd("set runtimepath^=~/.config/nvim")
-vim.o.packpath = vim.o.runtimepath
-vim.cmd('source ~/.vimrc')
+require("config.preconfig")                     -- Pre-configuration settings
+require("config.plugins")
 
 -- Plugins settings
 require("config.plugins.configs")               -- Plugin configurations

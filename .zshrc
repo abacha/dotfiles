@@ -60,7 +60,7 @@ source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
 # Environment Variables
-export PATH=$PATH:/usr/local/sbin:/usr/sbin:/sbin
+export PATH="$HOME/.local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin"
 export EDITOR=nvim
 export PAGER=most
 export MANPAGER=most
