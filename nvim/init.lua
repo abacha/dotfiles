@@ -8,7 +8,6 @@ require("config.plugins.treesitter")            -- Treesitter configuration
 require("config.plugins.nvim-cmp")              -- Autocompletion configuration
 require("config.plugins.telescope")             -- Telescope fuzzy finder config
 require("config.plugins.lsp")                   -- LSP configuration
-require("config.plugins.code_companion")        -- Code Companion configuration
 
 -- Core Neovim settings
 require("config.options")
