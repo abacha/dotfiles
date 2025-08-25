@@ -2,9 +2,40 @@ return require('packer').startup(function(use)
   use 'wbthomason/packer.nvim'
 
   -- Themes and UI
-  use 'altercation/vim-colors-solarized'
+  use 'Tsuzat/NeoSolarized.nvim'
   use 'airblade/vim-gitgutter'
-  use 'scrooloose/nerdtree'
+  use {
+    'nvim-tree/nvim-tree.lua',
+    config = function()
+      require('nvim-tree').setup{
+        renderer = {
+          icons = {
+            show = {
+              file = false,
+              folder = false,
+              folder_arrow = true,
+              git = true,
+            },
+            glyphs = {
+              folder = {
+                arrow_closed = "📁",
+                arrow_open = "📂",
+              },
+              git = {
+                unstaged = "✏️",
+                staged = "✅",
+                unmerged = "🔴",
+                renamed = "➡️",
+                untracked = "❓",
+                deleted = "❌",
+                ignored = "🙈",
+              },
+            },
+          },
+        },
+      }
+    end
+  }
 
   -- Utilities
   use 'mattn/gist-vim'

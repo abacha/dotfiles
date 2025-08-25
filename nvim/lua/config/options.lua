@@ -53,5 +53,5 @@ vim.opt.list = false
 
 -- Colors
 vim.opt.background = "dark"
-vim.cmd("colorscheme solarized")
+vim.cmd("colorscheme NeoSolarized")
 vim.cmd("syntax enable")
