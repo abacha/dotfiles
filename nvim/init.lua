@@ -9,6 +9,7 @@ require("config.plugins.nvim-cmp")              -- Autocompletion configuration
 require("config.plugins.telescope")             -- Telescope fuzzy finder config
 require("config.plugins.nvim-tree")               -- NvimTree configuration
 require("config.plugins.lualine")                 -- Lualine configuration
+require("config.plugins.gitsigns")                -- Gitsigns configuration
 require("config.plugins.lsp")                   -- LSP configuration
 
 -- Core Neovim settings

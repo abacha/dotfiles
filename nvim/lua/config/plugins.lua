@@ -4,7 +4,7 @@ return require('packer').startup(function(use)
   -- Themes and UI
   use 'Tsuzat/NeoSolarized.nvim'
   use 'nvim-lualine/lualine.nvim'
-  use 'airblade/vim-gitgutter'
+  use 'lewis6991/gitsigns.nvim'
 
   -- Utilities
   use 'mattn/gist-vim'

@@ -50,6 +50,7 @@ plugins=(
   zsh-autosuggestions
   zsh-syntax-highlighting
   # zsh-autocomplete
+  fzf
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -80,7 +81,7 @@ autoload -Uz compinit && compinit
 
 # Key Bindings
 bindkey -v
-bindkey '^r' history-incremental-search-backward
+# bindkey '^r' history-incremental-search-backward
 
 # Notes Function
 notes() {
@@ -102,3 +103,6 @@ alias hub-start='hs-local services start && hs-local account start && hs-local s
 # pnpm configuration
 export PNPM_HOME="/home/abacha/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
+
+# fzf keybindings
+[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
