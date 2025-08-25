@@ -30,7 +30,6 @@ vim.opt.visualbell = true
 vim.opt.hidden = true
 vim.opt.title = true
 vim.opt.colorcolumn = "+1"
-vim.opt.statusline = "%F%m%r%h%w [%l/%L] [%v]"
 vim.opt.completeopt = { "menu", "menuone", "longest" }
 vim.opt.pumheight = 10
 vim.opt.wildignore:append({

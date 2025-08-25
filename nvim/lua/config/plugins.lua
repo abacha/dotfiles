@@ -3,39 +3,8 @@ return require('packer').startup(function(use)
 
   -- Themes and UI
   use 'Tsuzat/NeoSolarized.nvim'
+  use 'nvim-lualine/lualine.nvim'
   use 'airblade/vim-gitgutter'
-  use {
-    'nvim-tree/nvim-tree.lua',
-    config = function()
-      require('nvim-tree').setup{
-        renderer = {
-          icons = {
-            show = {
-              file = false,
-              folder = false,
-              folder_arrow = true,
-              git = true,
-            },
-            glyphs = {
-              folder = {
-                arrow_closed = "📁",
-                arrow_open = "📂",
-              },
-              git = {
-                unstaged = "✏️",
-                staged = "✅",
-                unmerged = "🔴",
-                renamed = "➡️",
-                untracked = "❓",
-                deleted = "❌",
-                ignored = "🙈",
-              },
-            },
-          },
-        },
-      }
-    end
-  }
 
   -- Utilities
   use 'mattn/gist-vim'
@@ -44,6 +13,7 @@ return require('packer').startup(function(use)
   use 'tpope/vim-fugitive'
   use 'tpope/vim-eunuch'
   use 'roxma/vim-tmux-clipboard'
+  use 'nvim-tree/nvim-tree.lua'
 
   -- Telescope and dependencies
   use 'nvim-lua/plenary.nvim'
