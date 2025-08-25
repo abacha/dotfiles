@@ -9,7 +9,7 @@
 [merge]
   tool = nvim
 [diff]
-  tool = vimdiff
+  tool = nvim -d
 [dude]
 	interval = 60
 [alias]

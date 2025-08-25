@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 NODE_VERSION=20
 RUBY_VERSION=3.2.5
 
@@ -31,11 +33,11 @@ setup_neovim() {
   sudo add-apt-repository ppa:neovim-ppa/unstable -y
   sudo apt install neovim -y
 
-  echo "Installing Vim-Plug..."
-  curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
-    https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-      sudo apt install ripgrep -y
-    }
+  echo "Installing packer.nvim..."
+  git clone --depth 1 https://github.com/wbthomason/packer.nvim $@ ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+
+  sudo apt install ripgrep -y
+}
 
 # Function to setup ASDF
 setup_asdf() {
@@ -49,7 +51,6 @@ setup_ruby() {
   asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
   asdf install ruby $RUBY_VERSION
   asdf global ruby $RUBY_VERSION
-  ln -sf
 }
 
 # Function to setup Zsh
@@ -96,7 +97,7 @@ setup_tmux() {
 setup_tmuxinator() {
   echo "Setting up Tmuxinator..."
   gem install tmuxinator
-  ln -sf ~/dotfiles/tmuxinator ~/.config/
+  ln -sf ~/dotfiles/.tmuxinator ~/.config/
 }
 
 # Function to setup WSL
@@ -118,10 +119,14 @@ main() {
   setup_tmux
   setup_tmuxinator
 
-  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null; then
+  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null;
+    then
     echo "WSL detected. Installing additional packages..."
     setup_wsl
   fi
+
+  echo "Updating git submodules..."
+  git submodule update --init --recursive
 }
 
 # If no args are passed, run the main function

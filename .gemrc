@@ -5,6 +5,5 @@
 gem: --no-ri --no-rdoc
 :sources: 
 - http://rubygems.org/
-- http://gems.github.com
 :verbose: true
 :benchmark: false
