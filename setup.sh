@@ -73,17 +73,15 @@ setup_zsh() {
 # Function to create symbolic links for dotfiles
 create_symlinks() {
   echo "Creating symbolic links for dotfiles..."
-  ln -sf ~/dotfiles/.vimrc ~/
   ln -sf ~/dotfiles/.zshrc ~/
   ln -sf ~/dotfiles/.tmux.conf ~/
-  mkdir -p ~/.config
-  ln -sf ~/dotfiles/tmuxinator ~/.config/
   ln -sf ~/dotfiles/.gitconfig ~/
   ln -sf ~/dotfiles/.inputrc ~/
   ln -sf ~/dotfiles/.pryrc ~/
   ln -sf ~/dotfiles/.gemrc ~/
-  mkdir -p ~/.config/nvim
-  ln -sf ~/dotfiles/init.vim ~/.config/nvim
+
+  mkdir -p ~/.config
+  ln -sf ~/dotfiles/nvim ~/.config/
   ln -sf ~/dotfiles/tmuxinator ~/.config/
 }
 

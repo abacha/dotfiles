@@ -22,7 +22,7 @@
   dc = diff --cached
   di = diff
   fp = fetch --prune
-  h = log --graph --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
+  h = log --graph --pretty='format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset' --all --date=relative
   l = log --pretty=\"format:%C(yellow)%h%Cblue%d%Creset %s %C(white) %an, %ar%Creset\" --all
   rb = rebase
   rbm = rebase origin/master
