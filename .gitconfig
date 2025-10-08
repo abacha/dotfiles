@@ -14,7 +14,7 @@
 	interval = 60
 [alias]
   a = add
-  amend = commit --amend
+  amend = commit --amend --no-edit
   ap = add --patch
   b = branch
   ci = commit -m

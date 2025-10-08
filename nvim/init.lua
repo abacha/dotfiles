@@ -11,6 +11,7 @@ require("config.plugins.nvim-tree")               -- NvimTree configuration
 require("config.plugins.lualine")                 -- Lualine configuration
 require("config.plugins.gitsigns")                -- Gitsigns configuration
 require("config.plugins.lsp")                   -- LSP configuration
+require("config.plugins.vim-test")              -- vim-test configuration
 require("config.colorscheme")
 
 -- Core Neovim settings
