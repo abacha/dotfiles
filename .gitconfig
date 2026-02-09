@@ -30,6 +30,7 @@
   st = status
   pop = stash pop
   sq = rebase HEAD~20 -i --autosquash
+	fixup-first = "!f(){\n  base=\"$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')\";\n  if [ -z \"$base\" ]; then\n    if git show-ref --verify --quiet refs/remotes/origin/main; then\n      base=main;\n    else\n      base=master;\n    fi\n  fi\n  git commit --fixup=$(git rev-list --reverse --max-count=1 --grep=\"^fixup! \" --grep=\"^squash! \" --invert-grep HEAD ^origin/$base);\n}; f"
 [push]
 	default = matching
 [branch]
