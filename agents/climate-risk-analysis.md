@@ -16,9 +16,20 @@
   - `OUTPUT_GCS_PREFIX` defaults to `Output`.
   - `GOOGLE_APPLICATION_CREDENTIALS=/app/Resources/gcp-service-account.json` is used in deploy.
 - Cache: when GCS is enabled, `/simulations` reads `simulation_inputs.json` from GCS and caches it locally under `Output/.cache_inputs/` (no TTL).
+  - API endpoints for single simulations will also fetch missing outputs from GCS into the local cache on demand.
+
+## Business Context (Plain English)
+- The report is used to evaluate **climate risk exposure** for a given farm, crop, and planting date.
+- The **Score de Risco Agro-Climático** summarizes risk on a 0–100 scale based on historical climate behavior.
+- The report highlights **critical drought/heat windows** and how often yield losses occur under adverse climate.
+- Batch runs support portfolio‑style assessments across many fields or municipalities.
 
 ## Batch Processing
 - Batch outputs include aggregated summaries and can generate additional derived files when needed.
+- Expected aggregated artifacts include:
+  - `aggregated_metrics.csv` (group‑level metrics)
+  - `simulations_summary.csv` (list of simulations and key outputs)
+  - `yield_index_by_year.csv` (year‑by‑year yield index)
 
 ## Deploy / GKE
 - `scripts/update_app.sh`:
@@ -31,3 +42,7 @@
 - KML coordinate order is `longitude,latitude[,alt]`.
 - Supported geometries: Point and Polygon (centroid).
 
+## Scripts (Purpose & Usage)
+- `scripts/geocode_cidades.sh` — Geocode a CSV with a `CIDADE` header (Brazil only). Adds `LATITUDE` and `LONGITUDE`. Overwrites existing values.
+- `scripts/split_batch_csv.sh` — Split a large batch CSV into smaller chunk files (for parallel processing/testing).
+- `scripts/run_batch_jobs_parallel.sh` — Run multiple batch chunks via Kubernetes jobs in parallel with progress logging.

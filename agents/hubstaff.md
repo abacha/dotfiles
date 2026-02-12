@@ -28,10 +28,22 @@
 - Avoid `update_columns`/`update_column` in specs unless unavoidable; prefer factory setup and related records to drive counters (e.g., create `user_organizations` instead of manually setting `active_user_organizations_count`).
 - Prefer stubbing high-level services (e.g., `CustomerIOManager.send_email`) instead of internal client objects unless a test requires lower-level behavior.
 - Prefer implicit RSpec syntax when possible (e.g., `it { is_expected.to ... }`, `its_block { is_expected.to ... }`).
+- For hash-like results, favor `its([:key]) { is_expected.to ... }` over separate `describe` blocks with `subject { hash[:key] }`.
+- Use `context` blocks for conditional branches (`when ...`), not `describe`.
 - For UI work, add Vitest + Testing Library specs near the component to cover rendering, interactions, and edge cases; mock network calls where possible.
 - Update fixtures/seeds only when necessary and document significant test data changes in PR descriptions.
 - Aim to keep suites green locally before pushing; partial runs are fine if scoped to the touched areas plus smoke tests.
 
+
+## Experiment Guidance
+- Treat experiments as temporary: remove experiment flags, code paths, assets, and configs when rolling out or sunsetting.
+- Prefer feature-complete implementations over experiment shortcuts; refactor hardcoded values and split long views into reusable partials/components.
+- Keep experiment-specific assets under an experiments namespace (e.g., `app/assets/images/experiments/00xx_*`) and remove/move them when the experiment ends.
+- If an experiment becomes permanent, move assets/classes to product-appropriate locations and update references (avoid `example_data` or experiment naming in paths/classes).
+- When removing an experiment, search for indirect support code (helpers, services, jobs, styles, view models, tests) that only existed to support it and remove those too.
+- Update specs to match the new stable structure; keep coverage at 100% for new/changed code paths and follow our RSpec conventions (implicit `it`, `context` for conditionals).
+- Avoid deleting historical migrations unless explicitly requested; add a new migration to drop obsolete tables.
+- Align analytics/tracking events and CTA links with the final UX; ensure review/drill‑down links match the same date range as counts.
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits with sentence-case subjects (types allowed: chore, ci, docs, feat, fix, gemfile, migration, perf, refactor, revert, style, test, package) and a <=100 character header.
 - PRs should include a concise summary, linked issue/ticket, screenshots or recordings for UI changes, and notes on migrations or background jobs. List the commands you ran (e.g., `bundle exec rspec`, `pnpm test`, `bundle exec rubocop`) in the description so reviewers can trust the state.
