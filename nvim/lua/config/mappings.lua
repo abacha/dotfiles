@@ -50,3 +50,27 @@ vim.api.nvim_create_user_command("TogglePaste", function()
 end, {})
 
 map("n", "<leader>p", ":TogglePaste<CR>")
+
+-- Custom command to delete current file and close the buffer safely
+vim.api.nvim_create_user_command("DeleteFile", function()
+  local buf = vim.api.nvim_get_current_buf()
+  local file = vim.api.nvim_buf_get_name(buf)
+
+  if file == "" then
+    vim.notify("No file associated with current buffer", vim.log.levels.WARN)
+    return
+  end
+
+  if vim.fn.confirm("Delete file?\n" .. file, "&Yes\n&No", 2) ~= 1 then
+    return
+  end
+
+  local ok, err = os.remove(file)
+  if not ok then
+    vim.notify("Failed to delete file: " .. tostring(err), vim.log.levels.ERROR)
+    return
+  end
+
+  vim.cmd("bdelete")
+  vim.notify("Deleted: " .. file, vim.log.levels.INFO)
+end, {})

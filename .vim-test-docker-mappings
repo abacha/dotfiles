@@ -1,0 +1,4 @@
+# Vim-Test Docker Mappings
+# Format: /path/to/project/root=container-name
+/home/abacha/projects/hubstaff/hubstaff-server=hs-server
+/home/abacha/projects/hubstaff/hubstaff-account=hs-account
