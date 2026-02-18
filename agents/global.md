@@ -6,3 +6,8 @@
 - Request approval only when a command requires escalated permissions (e.g., `sudo`) or sandbox restrictions block a needed command.
 - Otherwise proceed without prompting; surface a short justification only when asking for approval.
 - Never commit without explicit approval
+
+## Project-Specific Agent Instructions
+
+- Check `~/dotfiles/agents/` for project-specific instructions when working in a repository.
+- Match the current project to the corresponding agent file (e.g., `hubstaff.md` for hubstaff repos) and follow its guidelines for build commands, coding style, testing conventions, and commit/PR standards.
