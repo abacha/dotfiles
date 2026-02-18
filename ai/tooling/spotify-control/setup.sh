@@ -34,5 +34,7 @@ Next steps:
 
 4) Test control:
    npm run control -- devices
+   npm run control -- status
+   npm run control -- current-volume
    npm run control -- play
 EOF

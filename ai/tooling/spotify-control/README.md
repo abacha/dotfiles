@@ -26,10 +26,14 @@ npm run auth
 - The script captures the callback token and updates `.env` automatically.
 - No manual token copy/paste needed.
 - Fallback: you can still manually update token with `./save-token.sh "<refresh_token>"`.
+- Auth session timeout is 5 minutes by default (`SPOTIFY_AUTH_TIMEOUT_MS` to customize).
+- If callback port is busy, it tries nearby ports (register those redirect URIs in Spotify app settings if needed).
 
 ## 4) Control playback
 ```bash
 npm run control -- devices
+npm run control -- status
+npm run control -- current-volume
 npm run control -- play
 npm run control -- pause
 npm run control -- next
