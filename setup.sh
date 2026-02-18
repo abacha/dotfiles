@@ -98,6 +98,24 @@ setup_tmuxinator() {
   ln -sf ~/dotfiles/.tmuxinator ~/.config/
 }
 
+# Function to setup AI config links
+setup_ai_config() {
+  echo "Setting up AI config links..."
+
+  mkdir -p ~/dotfiles/ai/conventions
+
+  # Shared agent definitions
+  mkdir -p ~/.codex ~/.claude ~/.gemini ~/.codex/rules
+  ln -sfn ~/dotfiles/ai ~/.codex/agents
+  ln -sfn ~/dotfiles/ai ~/.claude/agents
+  ln -sfn ~/dotfiles/ai ~/.gemini/agents
+
+  # Shared global rules file for each CLI
+  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.claude/CLAUDE.md
+  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.gemini/GEMINI.md
+  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.codex/rules/default.rules
+}
+
 # Function to setup WSL
 setup_wsl() {
   echo "Setting up WSL..."
@@ -114,6 +132,7 @@ main() {
   setup_ruby
   setup_zsh
   create_symlinks
+  setup_ai_config
   setup_tmux
   setup_tmuxinator
 
