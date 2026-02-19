@@ -53,7 +53,18 @@
       "subagents": {
         "maxConcurrent": 8
       }
-    }
+    },
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "subagents": {
+          "allowAgents": [
+            "*"
+          ]
+        }
+      }
+    ]
   },
   "tools": {
     "web": {
@@ -70,7 +81,8 @@
   },
   "commands": {
     "native": "auto",
-    "nativeSkills": "auto"
+    "nativeSkills": "auto",
+    "restart": true
   },
   "hooks": {
     "internal": {
