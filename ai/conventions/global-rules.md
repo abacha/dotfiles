@@ -9,5 +9,11 @@
 
 ## Project-Specific Agent Instructions
 
-- Check `~/dotfiles/agents/` for project-specific instructions when working in a repository.
-- Match the current project to the corresponding agent file (e.g., `hubstaff.md` for hubstaff repos) and follow its guidelines for build commands, coding style, testing conventions, and commit/PR standards.
+- Check `~/dotfiles/ai/projects/` for project-specific instructions when working in a repository.
+- Match the current project to the corresponding rules file and follow its guidelines for build commands, coding style, testing conventions, and commit/PR standards.
+
+## Routing & Review Guardrails
+
+- Always load and follow `~/dotfiles/ai/routing-policy.md` before model/task routing.
+- For deep/thorough code review requests, delegate review to Claude first.
+- Do not deviate from these routing/review guardrails unless explicitly instructed by the user.
