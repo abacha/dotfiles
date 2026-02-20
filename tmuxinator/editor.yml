@@ -1,0 +1,11 @@
+# /home/abacha/.config/tmuxinator/editor.yml
+
+name: editor
+root: ~/projects/
+
+windows:
+  - hubstaff-server:
+      layout: main-vertical
+      pre: cd ~/projects/hubstaff/hubstaff-server
+      panes:
+        - nvim

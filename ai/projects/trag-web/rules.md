@@ -32,6 +32,13 @@
   - add rewrite from `/api/graphql` to `https://api.stg.trag.agr.br/`
 - Before backend-related debugging/testing, confirm requests are hitting staging and not production.
 
+## Debugging the API (staging)
+- You can hit the GraphQL API directly with `curl`—include `--http1.1` if HTTP/2 causes issues—and mirror whatever query the UI is sending (InsurancePolicyExport is a good starting point).
+- The staging Authorization token is a naked string (no "Bearer"/"Token" prefix). Set the header exactly like:
+  ```
+  Authorization: <TOKEN>
+  ```
+
 ## Required Checks Before Finishing
 - Always run lint:
   - `npm run lint`

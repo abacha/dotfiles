@@ -32,9 +32,9 @@
         "fallbacks": [
           "openai-codex/gpt-5.2",
           "google/gemini-3-pro-preview",
-          "anthropic/claude-3-5-sonnet-latest",
           "openai-codex/gpt-5.1-codex-mini",
-          "google/gemini-2.0-flash"
+          "google/gemini-2.0-flash",
+          "anthropic/claude-4-5-sonnet",
         ]
       },
       "models": {
@@ -43,7 +43,7 @@
         "openai-codex/gpt-5.3-codex": {},
         "openai-codex/gpt-5.2": {},
         "openai-codex/gpt-5.1-codex-mini": {},
-        "anthropic/claude-3-5-sonnet-latest": {}
+        "anthropic/claude-4-5-sonnet": {},
       },
       "workspace": "/home/abacha/.openclaw/workspace",
       "compaction": {
