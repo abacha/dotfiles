@@ -1,4 +1,5 @@
 # AGENTS.md
+> Project path: `~/projects/trag/climate-risk-analysis`
 
 ## Working Agreement
 - Never create a git commit without explicit user approval. If unsure, ask.

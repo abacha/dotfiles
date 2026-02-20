@@ -1,4 +1,5 @@
 # tiao — Project AI Runbook
+> Project path: `~/projects/trag/tiao`
 
 ## Quick Runbook
 

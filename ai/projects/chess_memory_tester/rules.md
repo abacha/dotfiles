@@ -1,4 +1,5 @@
 # Agent Guide - Chess Memory Tester
+> Project path: `~/projects/trag/chess_memory_tester`
 
 This project is a single-page app with a small API. Use this guide to keep changes consistent.
 

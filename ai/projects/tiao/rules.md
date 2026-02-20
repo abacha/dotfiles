@@ -1,4 +1,5 @@
 # tiao — Agent Instructions
+> Project path: `~/projects/trag/tiao`
 
 ## Scope
 - Project: `~/projects/trag/tiao`

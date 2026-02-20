@@ -1,4 +1,5 @@
 # trag-web — Agent Instructions
+> Project path: `~/projects/trag/trag-web`
 
 ## Scope
 - Project: `~/projects/trag/trag-web`

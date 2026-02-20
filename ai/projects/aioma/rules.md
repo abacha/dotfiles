@@ -1,4 +1,5 @@
 # AIOMA — Agent Instructions
+> Project path: `~/projects/trag/AIOMA`
 
 ## Project Overview
 Seasonal climate forecast ensemble pipeline. Downloads data from 8+ global forecast centers via Copernicus CDS API, computes a multi-model ensemble mean, and generates visualizations + JSON export for an interactive map.

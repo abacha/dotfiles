@@ -1,4 +1,5 @@
 # Repository Guidelines
+> Project path: `~/projects/trag/hubstaff-server`
 
 ## Project Structure & Module Organization
 - Ruby on Rails application lives in `app/` (controllers, models, services, jobs, policies, mailers, widgets), with shared utilities in `lib/` and configuration in `config/`.
