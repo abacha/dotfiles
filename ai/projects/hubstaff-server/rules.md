@@ -78,6 +78,7 @@
 
 ### Rollout & Cleanup
 - Treat experiments as temporary: remove experiment flags, code paths, assets, and configs when rolling out or sunsetting.
+- Keep experiment-specific assets under an experiments namespace (e.g., `app/assets/images/experiments/00xx_*`) and remove/move them when the experiment ends.
 - When rolling back an experiment, disable it in Statsig first, then remove all code/assets.
 - If an experiment becomes permanent, move assets/classes to product-appropriate locations and update references (avoid `example_data` or experiment naming in paths/classes).
 - When removing an experiment, search for indirect support code (helpers, services, jobs, styles, view models, tests) that only existed to support it and remove those too.
