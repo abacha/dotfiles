@@ -37,9 +37,48 @@
 
 
 ## Experiment Guidance
+
+### Experiment Structure & Implementation
+- **Experiments use Statsig, NOT feature flags.** All experiment code lives in `lib/experiments/` and inherits from `Experiments::Base`.
+- Each experiment class defines three constants:
+  - `EXPERIMENT_KEY` - Statsig experiment key (e.g., `'0114_flat_fee_vsmb_plan'`)
+  - `DYNAMIC_CONFIG_KEY` - Statsig dynamic config key for parameters (e.g., `'0114_flat_fee_vsmb_plan_config'`)
+  - `LAYER_KEY` - (Optional) For layer experiments (e.g., `'wizard_signup_org'`)
+- Use `check_param(param_name, default: value)` to read experiment parameters from Statsig dynamic configs.
+- Use `config_value(attr, default: value)` as a shorthand for reading from the dynamic config.
+- Implement `meets_criteria?` to define eligibility (e.g., owner-only, team size, single-org users).
+- Set `statsig_organization_id` if the experiment targets organizations (not just users).
+- Set `layer_experiment?` to `true` if using layers.
+- **Reference examples:** Check `lib/experiments/extended_trial_for_vsmb.rb` or `vsmb_plan_dry_test.rb` for patterns.
+
+### Dynamic Configs on Statsig
+- Store all experiment configuration in Statsig Dynamic Configs (pricing, copy, feature toggles, target audience filters).
+- **Example:** `config_value('target_team_sizes', default: [1, 2, 3])` reads an array from the dynamic config.
+- Never hardcode experiment values in the Ruby class; always pull from dynamic config so changes don't require deploys.
+
+### Frontend Integration
+- JavaScript controllers for experiments live in `app/assets/javascripts/controllers/experiments/00xx_*.js`.
+- Use event delegation pattern (`document.addEventListener('click', ...)`) to handle CTA clicks.
+- Track analytics by POSTing to `/analytics` controller:
+  ```javascript
+  await fetch('/analytics', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({
+      event_name: '0114 Event Name',
+      event_properties: { ... },
+    }),
+  });
+  ```
+- Experiment-specific views/partials go in `app/views/experiments/exp_00xx_*/`.
+- Assets (images, styles) go in `app/assets/{images,stylesheets}/experiments/00xx_*/`.
+
+### Rollout & Cleanup
 - Treat experiments as temporary: remove experiment flags, code paths, assets, and configs when rolling out or sunsetting.
-- Prefer feature-complete implementations over experiment shortcuts; refactor hardcoded values and split long views into reusable partials/components.
-- Keep experiment-specific assets under an experiments namespace (e.g., `app/assets/images/experiments/00xx_*`) and remove/move them when the experiment ends.
+- When rolling back an experiment, disable it in Statsig first, then remove all code/assets.
 - If an experiment becomes permanent, move assets/classes to product-appropriate locations and update references (avoid `example_data` or experiment naming in paths/classes).
 - When removing an experiment, search for indirect support code (helpers, services, jobs, styles, view models, tests) that only existed to support it and remove those too.
 - Update specs to match the new stable structure; keep coverage at 100% for new/changed code paths and follow our RSpec conventions (implicit `it`, `context` for conditionals).
