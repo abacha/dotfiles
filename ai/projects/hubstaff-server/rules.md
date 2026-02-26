@@ -1,5 +1,5 @@
 # Repository Guidelines
-> Project path: `~/projects/trag/hubstaff-server`
+> Project path: `~/projects/hubstaff/hubstaff-server`
 
 ## Project Structure & Module Organization
 - Ruby on Rails application lives in `app/` (controllers, models, services, jobs, policies, mailers, widgets), with shared utilities in `lib/` and configuration in `config/`.
@@ -39,52 +39,40 @@
 ## Experiment Guidance
 
 ### Experiment Structure & Implementation
-- **Experiments use Statsig, NOT feature flags.** All experiment code lives in `lib/experiments/` and inherits from `Experiments::Base`.
-- Each experiment class defines three constants:
-  - `EXPERIMENT_KEY` - Statsig experiment key (e.g., `'0114_flat_fee_vsmb_plan'`)
-  - `DYNAMIC_CONFIG_KEY` - Statsig dynamic config key for parameters (e.g., `'0114_flat_fee_vsmb_plan_config'`)
-  - `LAYER_KEY` - (Optional) For layer experiments (e.g., `'wizard_signup_org'`)
-- Use `check_param(param_name, default: value)` to read experiment parameters from Statsig dynamic configs.
-- Use `config_value(attr, default: value)` as a shorthand for reading from the dynamic config.
-- Implement `meets_criteria?` to define eligibility (e.g., owner-only, team size, single-org users).
-- Set `statsig_organization_id` if the experiment targets organizations (not just users).
-- Set `layer_experiment?` to `true` if using layers.
-- **Reference examples:** Check `lib/experiments/extended_trial_for_vsmb.rb` or `vsmb_plan_dry_test.rb` for patterns.
+- **Experiments use Statsig, NOT feature flags.** Code lives in `lib/experiments/` and inherits from `Experiments::Base`.
+- Define constants per experiment:
+  - `EXPERIMENT_KEY`
+  - `DYNAMIC_CONFIG_KEY`
+  - `LAYER_KEY` (if layer-based)
+- Prefer `config_value` for Dynamic Config-driven UI/content values.
+- Use `check_param` only when you intentionally want assignment/layer behavior.
+- `meets_criteria?` is optional. If targeting is fully in Statsig, keep Ruby criteria minimal.
+- Set `statsig_organization_id` when org targeting is needed.
 
-### Dynamic Configs on Statsig
-- Store all experiment configuration in Statsig Dynamic Configs (pricing, copy, feature toggles, target audience filters).
-- **Example:** `config_value('target_team_sizes', default: [1, 2, 3])` reads an array from the dynamic config.
-- Never hardcode experiment values in the Ruby class; always pull from dynamic config so changes don't require deploys.
+### Dynamic Configs on Statsig (Critical)
+- Keep key names **exactly** aligned between Ruby and Statsig.
+  - If Ruby reads `config_value(:plan_name)`, Statsig must use `plan_name` (not prefixed variants).
+- Prefer a single `features` array over `feature_1..feature_n` keys.
+- Avoid hardcoded defaults in experiment classes for production behavior; use `nil`/empty defaults and set real values in Statsig.
+- For card-style pricing UIs, keep explicit keys for display text (e.g., `max_seats_text`, `platform_fee_details_text`, `primary_cta_text`).
 
-### Frontend Integration
-- JavaScript controllers for experiments live in `app/assets/javascripts/controllers/experiments/00xx_*.js`.
-- Use event delegation pattern (`document.addEventListener('click', ...)`) to handle CTA clicks.
-- Track analytics by POSTing to `/analytics` controller:
-  ```javascript
-  await fetch('/analytics', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-    },
-    body: JSON.stringify({
-      event_name: '0114 Event Name',
-      event_properties: { ... },
-    }),
-  });
-  ```
-- Experiment-specific views/partials go in `app/views/experiments/exp_00xx_*/`.
-- Assets (images, styles) go in `app/assets/{images,stylesheets}/experiments/00xx_*/`.
+### Frontend Integration (Slim + Plans)
+- Experiment JS controllers: `app/assets/javascripts/controllers/experiments/00xx_*.js`.
+- Views/partials: `app/views/experiments/exp_00xx_*/`.
+- For Hubstaff SGT plans, integrate in `app/views/organizations/ab_testing/hubstaff_sgt/_default.html.slim`.
+- Use the correct backend plan key for CTA actions (`hubstaff_sgt_starter_monthly` for Starter Monthly in SGT).
+- **Slim syntax caution:** multiline inline hashes in helper args can break parsing (`Expected tag`). Keep helper arg hashes compact/safe and sanity-check templates after edits.
+
+### Analytics Pattern
+- Track events via POST `/analytics` with CSRF token.
+- Keep event names stable and prefixed by experiment id.
+- Do not block primary CTA flow just for analytics failures.
 
 ### Rollout & Cleanup
-- Treat experiments as temporary: remove experiment flags, code paths, assets, and configs when rolling out or sunsetting.
-- Keep experiment-specific assets under an experiments namespace (e.g., `app/assets/images/experiments/00xx_*`) and remove/move them when the experiment ends.
-- When rolling back an experiment, disable it in Statsig first, then remove all code/assets.
-- If an experiment becomes permanent, move assets/classes to product-appropriate locations and update references (avoid `example_data` or experiment naming in paths/classes).
-- When removing an experiment, search for indirect support code (helpers, services, jobs, styles, view models, tests) that only existed to support it and remove those too.
-- Update specs to match the new stable structure; keep coverage at 100% for new/changed code paths and follow our RSpec conventions (implicit `it`, `context` for conditionals).
-- Avoid deleting historical migrations unless explicitly requested; add a new migration to drop obsolete tables.
-- Align analytics/tracking events and CTA links with the final UX; ensure review/drill‑down links match the same date range as counts.
+- Disable experiment in Statsig first, then remove code/assets.
+- Treat experiment code as temporary; remove dead support code when sunsetted.
+- If experiment becomes permanent, migrate code/assets out of experiment namespaces.
+- Keep tests aligned with final stable paths and behavior.
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits with sentence-case subjects (types allowed: chore, ci, docs, feat, fix, gemfile, migration, perf, refactor, revert, style, test, package) and a <=100 character header.
 - PRs should include a concise summary, linked issue/ticket, screenshots or recordings for UI changes, and notes on migrations or background jobs. List the commands you ran (e.g., `bundle exec rspec`, `pnpm test`, `bundle exec rubocop`) in the description so reviewers can trust the state.
