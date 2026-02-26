@@ -7,15 +7,35 @@ import requests
 import time
 from datetime import datetime
 
+# Simple .env loader
+def load_env(path):
+    if not os.path.exists(path):
+        return
+    with open(path, "r") as f:
+        for line in f:
+            if line.strip() and not line.startswith("#"):
+                key, value = line.strip().split("=", 1)
+                os.environ[key] = value
+
+load_env(os.path.expanduser("~/.env"))
+
 # Strava API settings
-CLIENT_ID = "153097"
-CLIENT_SECRET = "acdf9f8a4e3a1020e47775c0a045f0e3f7143560"
+CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
+CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
 TOKEN_URL = "https://www.strava.com/oauth/token"
 BASE_URL = "https://www.strava.com/"
 AUTH_URL = BASE_URL + "oauth/authorize"
 SCOPES = "activity:read_all,activity:write"
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "strava_tokens.json")
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "activities.csv")
+
+
+def ensure_client_credentials():
+    if CLIENT_ID and CLIENT_SECRET:
+        return True
+    print("Error: STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET are required.")
+    print("Set them in ~/.env or export them before running this script.")
+    return False
 
 
 def get_tokens():
@@ -29,6 +49,9 @@ def get_tokens():
 
 
 def refresh_tokens(refresh_token=None):
+    if not ensure_client_credentials():
+        return None
+
     if not refresh_token:
         if os.path.exists(TOKEN_FILE):
             with open(TOKEN_FILE, "r") as f:
@@ -59,6 +82,9 @@ def refresh_tokens(refresh_token=None):
 
 
 def request_initial_authorization(code):
+    if not ensure_client_credentials():
+        return None
+
     try:
         response = requests.post(
             TOKEN_URL,
@@ -116,7 +142,7 @@ def get_activities(access_token, after_timestamp):
         except Exception as e:
             print(f"Error fetching activities page {page}: {e}")
             break
-            
+
         if not current_activities:
             break
         all_activities.extend(current_activities)
@@ -147,7 +173,7 @@ def update_activity_name(access_token, activity_id, new_name):
 def load_csv_activities():
     if not os.path.exists(CSV_FILE) or os.stat(CSV_FILE).st_size == 0:
         return []
-    
+
     with open(CSV_FILE, "r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         return list(reader)
@@ -155,13 +181,13 @@ def load_csv_activities():
 def save_csv_activities(activities):
     # Sort by date descending
     activities.sort(key=lambda x: x.get("Date", ""), reverse=True)
-    
+
     fieldnames = [
         "ID", "Name", "Date", "Distance (km)", "Active Time", "Average Heartrate",
         "Idle Time", "Idle %", "Average Speed (km/h)", "Max Speed (km/h)",
         "Average Cadence", "Max Heartrate", "Laps"
     ]
-    
+
     with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -189,23 +215,23 @@ def process_activity(activity, access_token):
         idle_time = activity["elapsed_time"] - activity["moving_time"]
         row["Idle Time"] = f"{idle_time // 3600:02}:{idle_time // 60 % 60:02}:{idle_time % 60:02}"
         row["Idle %"] = f"{(idle_time / activity['elapsed_time']) * 100:.2f}%" if activity["elapsed_time"] > 0 else "0.00%"
-        
+
         laps_data = get_laps(access_token, activity["id"])
         laps_str_list = []
         for lap in laps_data:
             dist = lap["distance"] / 1000
             m_time = lap["moving_time"]
             m_time_str = f"{m_time // 3600:02}:{m_time // 60 % 60:02}:{m_time % 60:02}"
-            
+
             pace_str = "N/A"
             if dist > 0:
                 pace_min_km = (m_time / 60) / dist
                 pace_str = f"{int(pace_min_km)}:{int((pace_min_km * 60) % 60):02}"
-            
+
             avg_hr = lap.get("average_heartrate", "N/A")
             # Format: Lap 1: 1.00km, 00:06:23, 6:23/km, 138.8bpm
             laps_str_list.append(f"Lap {lap['lap_index']}: {dist:.2f}km, {m_time_str}, {pace_str}/km, {avg_hr}bpm")
-        
+
         row["Laps"] = "\n".join(laps_str_list)
 
     return row
@@ -232,7 +258,7 @@ def print_activity_details(row):
     if row.get('Laps'):
         print(f"\n**Laps / Splits:**")
         # Handle both newline and comma separated formats just in case
-        laps_text = row['Laps'].replace(", Lap", "\nLap") 
+        laps_text = row['Laps'].replace(", Lap", "\nLap")
         for line in laps_text.split('\n'):
             clean_line = line.strip()
             if clean_line:
@@ -245,7 +271,7 @@ def sync_activities(force_all=False):
 
     existing_rows = load_csv_activities()
     existing_ids = {str(r["ID"]) for r in existing_rows}
-    
+
     last_date_ts = 0
     if not force_all and existing_rows:
         # Assuming sorted desc, first item is latest
@@ -254,22 +280,22 @@ def sync_activities(force_all=False):
             last_date_ts = last_date_obj.timestamp()
         except ValueError:
             pass
-    
+
     # If force_all or no existing data, fetch from beginning of year (or arbitrary past)
     if force_all or last_date_ts == 0:
         last_date_ts = datetime(datetime.now().year, 1, 1).timestamp()
 
     print(f"Fetching activities since {datetime.fromtimestamp(last_date_ts)}...")
     new_api_activities = get_activities(tokens["access_token"], last_date_ts)
-    
+
     added_count = 0
     new_rows = []
-    
+
     # Process new activities
     # Note: API returns oldest first usually if paginated by date? Or we need to check order.
     # Actually Strava API `after` returns chronologically (oldest after date to newest).
     # So we iterate and add.
-    
+
     for act in new_api_activities:
         if str(act["id"]) not in existing_ids:
             try:
@@ -296,11 +322,13 @@ def main():
     parser.add_argument("--update-name", action="store_true", help="Rename 'Evening Workout' to 'Judo'.")
     parser.add_argument("--get-auth-url", action="store_true", help="Print auth URL.")
     parser.add_argument("--code", help="Exchange auth code for tokens.")
-    
+
     args = parser.parse_args()
 
     # Auth flows
     if args.get_auth_url:
+        if not ensure_client_credentials():
+            return
         print(f"Auth URL:\n{AUTH_URL}?client_id={CLIENT_ID}&response_type=code&redirect_uri=http://localhost&approval_prompt=force&scope={SCOPES}")
         return
 
@@ -329,7 +357,7 @@ def main():
             print_activity_details(rows[0])
         else:
             print("No activities found locally. Try --sync first.")
-    
+
     if args.details:
         rows = load_csv_activities()
         found = False
@@ -341,7 +369,7 @@ def main():
         if not found:
             print(f"Activity ID {args.details} not found locally.")
 
-    # Default behavior if no args provided? 
+    # Default behavior if no args provided?
     if not any(vars(args).values()):
         parser.print_help()
 
