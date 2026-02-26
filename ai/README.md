@@ -22,5 +22,6 @@ Central directory that explains what each AI folder is for and where to look nex
 - `projects/chess_memory_tester/rules.md`
 - `projects/climate-risk-analysis/rules.md`
 - `projects/hubstaff-server/rules.md`
+- `projects/nexus-recall/rules.md`
 - `projects/trag-web/rules.md`
 - `projects/tiao/rules.md`
