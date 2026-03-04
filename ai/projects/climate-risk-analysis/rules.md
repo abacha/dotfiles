@@ -8,6 +8,9 @@
 - Prefer small, incremental changes; keep each change scoped to the current request.
 - Always run targeted tests for the change, then run the full suite (including smoke tests) and the linter before committing.
 
+## Deployment
+- **Deploy:** use `scripts/update_app.sh` to rebuild/push the image and rollout the GKE deployment.
+
 ## Current Architecture Notes
 - Web UI: Flask in `app.py`, routes in `web/routes.py` and `web/api.py`, templates in `web/templates/`.
 - Backend: `src/` contains analysis, simulation_core, services, and CLI (`src/main.py`).

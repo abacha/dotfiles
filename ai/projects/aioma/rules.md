@@ -4,70 +4,58 @@
 ## Project Overview
 Seasonal climate forecast ensemble pipeline. Downloads data from 8+ global forecast centers via Copernicus CDS API, computes a multi-model ensemble mean, and generates visualizations + JSON export for an interactive map.
 
-## Project Structure
+## Project structure
 ```
 AIOMA/
-  aioma/               # Python package
-    cli.py             # Entry point (python -m aioma.cli)
-    config.py          # Loads config.ini into dataclasses
-    models.py          # Dataclasses (CenterConfig, PipelineConfig, etc.)
-    download.py        # CDS API download (parallel, with retries)
-    ensemble.py        # Load, interpolate, convert, average, export
-    conversions.py     # Unit conversions (cumulative->daily, K->C, wind)
-    visualize.py       # Spatial maps + city time series PNGs
-    export.py          # JSON export for map.html
-    pipeline.py        # Orchestrator (download -> ensemble -> viz -> export)
-  config.ini           # All tunables (centers, grid, variables, cities)
-  Dockerfile           # Python 3.11-slim + system deps
-  docker-compose.yml   # Single service, mounts ./data as /app/data
-  map.html             # Interactive Leaflet map (loads data/ensemble_data.json)
-  viewer.html          # Static PNG viewer (loads data/*.png)
-  tests/               # pytest suite
-  data/                # Generated outputs (volume-mounted, gitignored)
+  aioma/               # Python package & FastAPI app
+  Dockerfile           # Multi-stage: base → pipeline → web
+  docker-compose.yml   # Services: pipeline (batch) + web (API + static UI)
+  data/                # Shared volume (gitignored) to hold netCDF, PNGs, JSON
+  scripts/             # Helpers (setup, run_app, deploy/update pipeline/web)
+  k8s/                 # Manifests for GKE deployment + pipeline job/cron
+  README.md            # High-level user guide (map, API contract, docs)
+  DEVELOPMENT.md       # Architecture, config knobs, run & deploy recipes
 ```
 
-## Build & Run
-- Everything runs inside Docker. The image bakes in the code and `config.ini`.
-- **Run pipeline**: `docker compose run --rm aioma`
-- **Rebuild after code/config changes**: `docker compose build` (or `--no-cache` if cached layers mask changes)
-- **Run a shell inside the container**: `docker compose run --rm aioma bash`
-- **Data files are root-owned** (created by Docker). To rename/delete data files, do it inside Docker: `docker compose run --rm aioma bash -c '...'`
-- `config.ini` is COPIED into the image at build time, NOT volume-mounted. Any config change requires a rebuild.
+Read both `README.md` and `DEVELOPMENT.md` before touching the project—those are the source of truth for run/deploy flows, networking, and API expectations. Keep them in sync with any functional change you make.
+
+## Quick commands
+- Rebuild both Docker images: `docker compose build` (changes to Python code or `config.ini` require this). `config.ini` is copied into the image—not volume-mounted—so config edits always need a rebuild.
+- Run the web server locally: `docker compose up web -d` (serves `/api`, `/map.html`, `/viewer.html`, `/data` volume).
+- Run the pipeline locally: `docker compose run --rm pipeline` (downloads from CDS, computes ensemble, renders PNGs/JSON).
+- Alternative local dev (without Docker): `scripts/setup.sh`, `scripts/run_app.sh web`, `scripts/run_app.sh pipeline`, `pytest`.
+- For pipeline jobs on GKE: `scripts/run_pipeline.sh` (set `BUILD=true` to rebuild & use new image).
 
 ## Testing
-- Run tests locally (not in Docker): `pytest tests/`
-- Run a single test file: `pytest tests/test_ensemble.py`
-- Tests use synthetic xarray datasets; no CDS API calls.
-- Always run relevant tests after making changes. Run the full suite before committing.
+- Fastest smoke: `pytest tests/test_api.py` (uses synthetic NetCDFs, no CDS calls).
+- Full suite: `pytest` (loads all unit/integration tests).
+- Always run the relevant slice after touching API logic, downloads, or conversions.
 
-## Coding Style
-- Python 3.11+, f-strings, type hints on function signatures.
-- All code and variable names in English. README and user-facing docs in Brazilian Portuguese (pt-BR).
-- Log messages in English.
-- No blanket `warnings.filterwarnings('ignore')`.
-- Prefer small functions with single responsibility (see ensemble.py for the pattern).
-- Dataclasses in `models.py` for configuration; avoid dicts for structured data.
-- All magic numbers belong in `config.ini`, not in Python files.
+## API contract (updated)
+- `/health` — simple health check.
+- `/api/status` and `/api/forecast/latest` — return metadata about the latest `ensemble_daily_*.nc` (variables, dates, grid bounds, filename).
+- `/api/forecast/data` — single entry point now:
+  - If `date` (and optionally repeated `var`) your response includes `date`, `variables`, `lats`, `lons`, and `data[var]` as 2D arrays (rounded values, `null` for NaN).
+  - If `lat`+`lon` (without `date`) you get `lat`, `lon`, `dates`, `variables`, and `data[var]` as time series for the nearest grid point (can request a single `var` or multiple via repeated query parameters).
+  - Invalid variable names or out-of-range dates return 400; missing data (before pipeline runs) returns 503.
+- `/docs` exposes the swagger UI (useful for quick cURL checks).
+- `/api/forecast/timeseries` and `/api/forecast/spatial-mean` have been retired—everything routes through `/api/forecast/data` now.
 
-## Key Conventions
-- File naming for data: `{center}_daily_{year}_{month}.nc` (per-center), `ensemble_daily_{YYYYMMDD}_{YYYYMMDD}.nc` (output).
-- Centers are configured in `config.ini [centers]`. Comment with `#` to disable a center.
-- Conversions (cumulative->daily, K->C) run **per-model before** ensemble averaging (this is meteorologically correct and was a critical fix — L1).
-- Grid interpolation runs on **all models** that differ from the target grid, not just specific ones (L2 fix).
-- The `number` dimension is used for member averaging for most centers; NCEP uses `forecast_reference_time`.
+## Deployment
+- **Web service:** follow `scripts/update_app.sh` (build/push web image, grant IAM roles, ensure GCS bucket, apply `k8s/deployment.yaml`, watch rollout). Use `PATH=/opt/google-cloud-sdk/bin:$PATH scripts/update_app.sh` in this environment so `gcloud` resolves correctly.
+- **Pipeline job:** use `scripts/run_pipeline.sh`; set `BUILD=true` to regenerate the pipeline image before triggering the job. On GKE the cronjob in `k8s/cronjob.yaml` runs monthly — edit PRs accordingly if changing schedule or volumes.
+- **Initial deploy:** `scripts/deploy_gke.sh` (sets up clusters, services, ingress, CDN certs). Only rerun if cluster/infra changes.
 
 ## Environment
-- `COPERNICUS_API_KEY` in `.env` (mounted via docker-compose)
-- `CDS_MAX_WORKERS` env var overrides `config.ini` max_workers (default: 3)
-- CDS API can be slow (hours). Some centers (e.g., JMA) may timeout or be temporarily unavailable — comment them out in config.ini if blocking.
+- `CDSAPI_KEY` (and optional `CDSAPI_URL`/`CDS_MAX_WORKERS`) go in `.env` for local Docker runs; the pipeline job expects the same variables via Kubernetes secrets.
+- `DATA_DIR` and `APP_DIR` default to `/app/data` and `/app` inside containers—only override if you change the Docker/K8s manifests.
 
-## Commit Style
-- Sentence-case subject, imperative mood.
-- Body explains "why" not "what".
-- Keep commits focused; don't mix unrelated changes.
+## Documentation & consistency
+- Whenever you change API outputs, README and DEVELOPMENT must reflect the new contract (endpoints, parameters, response shape). The UI (`map-logic.js`, `gallery-logic.js`) relies on the documented JSON shape—update tests to match if you tweak data structures.
+- Keep `map.html`/`viewer.html` consistent with the frontend JS; they are real assets tracked in git and break easily if JS expects different selectors.
 
-## Known Issues / Notes
-- JMA is currently commented out in config.ini (CDS download was timing out).
-- `xarray` emits `FutureWarning` about `Dataset.dims` return type — cosmetic, will resolve in a future xarray version.
-- The HTML files (map.html, viewer.html) are tracked in git. They need an HTTP server to work (`python3 -m http.server`) due to `fetch()` calls.
-- See `TODO.md` for the full roadmap (Phase 1 refactor is mostly done; Phase 2 web interface and Phase 3 cloud deployment are next).
+## Notes
+- Downloads happen from `seasonal-original-single-levels`; converting dewpoint or other derived fields should happen in `aioma/conversions.py` or `ensemble.py` before the ensemble is saved.
+- Generated assets (PNG/JSON/NetCDF) live in `data/` and are read-only for the web container; pipeline writes to them.
+- If modifying server code, remember the FastAPI app caches the latest NetCDF via `ForecastDataManager`—touching the file on disk (even with the same name) forces it to reload.
+- Use pt-br messaging in user-facing docs; keep code/logs in English per existing conventions.
