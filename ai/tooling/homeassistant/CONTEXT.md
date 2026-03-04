@@ -28,7 +28,28 @@ This file summarizes the Home Assistant setup and configuration from our session
 ## Discovered Entities (after Tuya integration)
 
 ### Cameras
-- `camera.camera_sala_profile000` (Intelbras iM3-C-3381, IP 192.168.15.42, integrated via ONVIF with `admin` and physical label password). Current state: `idle`, returns 500 Internal Server Error for image proxy.
+- **`camera.camera_sala`** (Intelbras iM3-C-3381, IP 192.168.15.42)
+  - **Status:** ✅ Working perfectly via FFmpeg platform
+  - **Resolution:** 1920x1080
+  - **Configuration:** Added to `configuration.yaml` (see Camera Setup below)
+  - **Access:** Snapshot available via `http://localhost:8124/api/camera_proxy/camera.camera_sala`
+
+#### Camera Setup (2026-02-28)
+The camera was successfully configured after these steps:
+1. **Added `stream:` to configuration.yaml** - Required for camera streaming support
+2. **Removed ONVIF integration** - Was generating incorrect RTSP URLs with `&unicast=true&proto=Onvif` that caused timeouts
+3. **Added camera via FFmpeg platform** with correct RTSP URL:
+   ```yaml
+   camera:
+     - platform: ffmpeg
+       name: Camera Sala
+       input: -rtsp_transport tcp -i rtsp://admin:a1a2a3a4a5@192.168.15.42:554/cam/realmonitor?channel=1&subtype=0
+   ```
+4. **Key points:**
+   - Use TCP transport (not UDP) for reliability
+   - Correct Intelbras RTSP path: `/cam/realmonitor?channel=1&subtype=0`
+   - No need for `&unicast=true&proto=Onvif` parameters
+   - Camera supports H.264 main stream (1920x1080 @ 20fps)
 
 ### Lights (Tuya Integration)
 - `light.led_sala_rack` (Status: `off`, available)
@@ -79,10 +100,22 @@ This file summarizes the Home Assistant setup and configuration from our session
 
 ## Integration Notes
 - **Tuya:** Successfully integrated. Many devices discovered.
-- **ONVIF (Intelbras Camera):** Successfully integrated using `admin` and camera's physical label password. Camera currently `idle` and image proxy returns 500 error.
+- **Camera (FFmpeg):** ✅ Working perfectly via FFmpeg platform with TCP RTSP transport.
 - **HACS:** Successfully installed and Home Assistant restarted. Requires activation in HA UI -> Integrations.
 - **Dreame Vacuum:** Requires HACS, then install "Dreame Vacuum" integration via HACS. Login issues persist with `KB373026` as username. Recommendation is to use `abacha@gmail.com` as username and ensure "Account Type" is set to "Dreamehome" (or try `cn` as country). If still issues, consider re-pairing the robot with Xiaomi Mi Home app for better HA compatibility.
 
 ## Troubleshooting
 - **LED Pia Cozinha:** Frequently `unavailable` due to placement inside a cabinet (Wi-Fi signal degradation, potential overheating). Recommendation: reposition outside cabinet or near an opening.
 - **Dreame Vacuum Login:** `login_error` persists. Tried `KB373026` (Dreame Account ID) with various regions (`us`, `de`, `sg`, `cn`) without immediate API error, but UI shows `login_error`. Recommended to use email `abacha@gmail.com` or re-pair robot with Mi Home app.
+- **Camera ONVIF Issues:** ONVIF integration generated incorrect RTSP URLs. Solution: Use FFmpeg platform directly with proper Intelbras RTSP path.
+
+## New Devices (EBO Air & ROLA Fountain)
+- **EBO Air (Y012YUMM):** Pet robot, uses proprietary app (not Tuya/Smart Life)
+- **ROLA Fountain-01 (100AAJD24CK0561):** Pet water fountain, uses proprietary app
+- **Status:** LocalTuya installed (2026-02-26), but devices not discovered via network scan
+- **Next Steps (requires PC access):**
+  1. Open `http://localhost:8124` in browser
+  2. Go to Configuration → Devices & Services → Add Integration → "LocalTuya"
+  3. Try automatic discovery or manual configuration
+  4. If LocalTuya fails, check if devices have API documentation or MQTT support
+  5. Alternative: Check if apps support Alexa/Google Home → integrate via HA cloud integration

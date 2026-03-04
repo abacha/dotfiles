@@ -1,0 +1,12 @@
+{
+  "name": "chatgpt-bridge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "send": "node bridge.mjs send"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "playwright": "^1.51.1"
+  }
+}

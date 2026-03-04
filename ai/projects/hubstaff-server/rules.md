@@ -8,7 +8,7 @@
 - Docs and internal guidelines reside in `docs/` and `documentation/` for deeper background.
 
 ## Build, Test, and Development Commands
-- Run all commands inside the `hs-server` container (e.g., `docker compose exec hs-server bundle exec rspec` or `docker exec -it hs-server pnpm test` if it is already running).
+- Run all commands inside the `hs-server` container (e.g., `docker exec hs-server bundle exec rspec` or `docker exec -it hs-server pnpm test` if it is already running).
 - First-time setup: `bin/setup` to install gems and prepare the database, then `pnpm install` (Node 22.14 via Volta) for frontend dependencies.
 - Run locally with `bundle exec rails s -b 0.0.0.0 -p 3000` plus `bundle exec sidekiq` for workers; start assets with `VITE_RUBY_HOST='0.0.0.0' bin/vite dev` (mirrors `Procfile.local`).
 - Backend tests: `bundle exec rspec` (scope with `bundle exec rspec spec/path/to/file_spec.rb`); lint Ruby with `bundle exec rubocop`.
@@ -23,6 +23,7 @@
 - Specs follow RSpec naming (`*_spec.rb`) and live near the code they cover; reuse helpers in `spec/support`.
 - Vue components use PascalCase filenames, camelCase props/methods, and rely on ESLint + Prettier (`.eslintrc.js`, `.prettierrc.js`). Keep shared UI primitives colocated in `app/javascript/components`.
 - Favor small, focused pull requests that align with existing directory patterns rather than introducing new top-level folders.
+- For new SCSS, prefer zone CSS color tokens (e.g., `var(--z-gray-300)`, `var(--z-green-500)`) instead of hard-coded hex values or SCSS color variables unless there is an explicit exception; source tokens live in `config/zone/figma-tokens.json` (extracted to CSS variables).
 
 ## Testing Guidelines
 - Add RSpec coverage for new endpoints (request/controller specs), services, jobs, and policies; prefer factories and `let_it_be` helpers to keep tests fast and deterministic.

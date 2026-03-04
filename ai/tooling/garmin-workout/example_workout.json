@@ -1,0 +1,23 @@
+{
+  "workout_name": "Sample_Intervals",
+  "warmup_minutes": 10,
+  "steps": [
+    {
+      "type": "Active",
+      "name": "Fast Run",
+      "duration_type": "Distance",
+      "duration_value": 800,
+      "target_type": "Speed",
+      "target_min_pace": "4:00",
+      "target_max_pace": "5:00"
+    },
+    {
+      "type": "Rest",
+      "name": "Recover",
+      "duration_type": "Time",
+      "duration_value": 90,
+      "intensity": "Resting"
+    }
+  ],
+  "cooldown_minutes": 5
+}
