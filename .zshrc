@@ -56,24 +56,9 @@ plugins=(
 source $ZSH/oh-my-zsh.sh
 unsetopt correct_all
 
-# Environment Variables
-export PATH="$HOME/.local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin:/snap/bin"
-export EDITOR=nvim
-export PAGER=most
-export MANPAGER=most
-export BROWSER=wslview
-
-# Source environment variables from .env if it exists
-if [ -f "$HOME/.env" ]; then
-  source "$HOME/.env"
-fi
-
 ttyctl -f
 
 # asdf Configuration
-export PATH="$HOME/.asdf/bin:$PATH"
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
-export ASDF_DATA_DIR="$HOME/.asdf"
 # append completions to fpath
 # fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
 # initialise completions with ZSH's compinit
@@ -95,23 +80,8 @@ notes() {
 # Powerlevel10k Configuration
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# Hubstaff Configuration
-export PATH="$HOME/.sre-toolkit/bin:$PATH"
-export HUBSTAFF_HOME=$HOME/projects/hubstaff/
-alias hub-start='hs-local services start && hs-local account start && hs-local server start'
-
-# pnpm configuration
-export PNPM_HOME="/home/abacha/.local/share/pnpm"
-[[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
-
 # fzf keybindings
 [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
-
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/opt/google-cloud-sdk/path.zsh.inc' ]; then . '/opt/google-cloud-sdk/path.zsh.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/opt/google-cloud-sdk/completion.zsh.inc' ]; then . '/opt/google-cloud-sdk/completion.zsh.inc'; fi
 
 # OpenClaw Completion
 source "/home/abacha/.openclaw/completions/openclaw.zsh"
