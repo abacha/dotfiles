@@ -11,6 +11,7 @@
 - Backend: `src/` (analysis, simulation_core, services, CLI).
 - Storage: GCS is **single source of truth** for outputs (`OUTPUT_GCS_BUCKET`).
 - Cache: `/simulations` reads `simulation_inputs.json` from GCS and caches locally under `Output/.cache_inputs/`.
+- **v1.0 Architecture Upgrade**: The system now uses an asynchronous queue architecture with PostgreSQL for job state and RabbitMQ for orchestration. See `tech_spec.md` in this directory for the full canonical implementation spec.
 
 ## KML Notes
 - KML coordinate order is `longitude,latitude[,alt]`.
