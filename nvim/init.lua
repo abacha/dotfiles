@@ -3,6 +3,7 @@ require("config.plugins")
 
 -- Plugins settings
 require("config.plugins.configs")               -- Plugin configurations
+require("config.plugins.markdown_preview")          -- Markdown preview settings
 require("config.plugins.copilot")               -- GitHub Copilot configuration
 require("config.plugins.treesitter")            -- Treesitter configuration
 require("config.plugins.nvim-cmp")              -- Autocompletion configuration

@@ -1,10 +1,11 @@
-local lspconfig = require('lspconfig')
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-lspconfig.ts_ls.setup({
- capabilities = capabilities,
+vim.lsp.config('ts_ls', {
+  capabilities = capabilities,
 })
+vim.lsp.enable('ts_ls')
 
-lspconfig.solargraph.setup({
- capabilities = capabilities,
+vim.lsp.config('solargraph', {
+  capabilities = capabilities,
 })
+vim.lsp.enable('solargraph')

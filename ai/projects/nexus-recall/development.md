@@ -2,6 +2,9 @@
 > Project path: `~/projects/nexus-recall`
 
 ## Critical Workflow Rule (User Preference)
+- **Always ensure backend code is synced to the container**:
+  - The `docker-compose.yml` should mount `./backend/src/app:/app/app` to allow live code updates.
+  - If a change isn't reflected, check the mount point or force a rebuild.
 - **After any code/config/documentation change in this project, always rebuild and restart the stack yourself**:
   - `docker compose up -d --build`
 - Do not leave “please rebuild/restart” as a manual follow-up when the agent can do it.
@@ -26,7 +29,7 @@
 - For every change in this project, run:
   - `docker compose up -d --build`
 - Confirm containers are healthy before handoff.
-- When backend config/settings change, prefer running the backend tests inside the API container:
+- When backend config/settings (`system_config.yaml`) change, prefer running the backend tests inside the API container:
   ```
   docker compose exec api pytest backend/tests
   ```

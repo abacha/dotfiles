@@ -8,6 +8,11 @@
 4. Maintain auth/CORS safety defaults; never silently weaken API protection.
 5. Keep changes scoped; avoid mixing unrelated backend + UI refactors in one pass.
 
+## Backend & Configuration Guardrails
+- **Config over Hardcode:** Never hardcode prompts, keyword lists, or project domains in Python. Use `backend/src/app/resources/system_config.yaml`.
+- **Pre-Storage Cleaning:** All message content must be sanitized via `cleaner.py` before being saved to the database to maintain index quality.
+- **Selective Ingestion:** Avoid importing technical noise (e.g., `tool` role messages) that degrades the human-readable memory history.
+
 ## API Change Guardrails
 - Keep endpoint behavior explicit and backward compatible when possible.
 - For new endpoints:

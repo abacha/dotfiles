@@ -24,6 +24,13 @@ return require('packer').startup(function(use)
   -- Treesitter
   use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
 
+  -- Markdown preview
+  use {
+    'iamcco/markdown-preview.nvim',
+    run = 'cd app && npm install',
+    ft = { 'markdown' },
+  }
+
   -- Testing
   use 'vim-test/vim-test'
   use 'tpope/vim-dispatch'

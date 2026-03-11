@@ -25,6 +25,14 @@ alias drun='docker-compose run $(basename "$PWD")'
 alias readmyenv="set -o allexport && source .env && set +o allexport"
 alias docker-compose='docker compose'
 
+# Prefer Windows Chrome when running GUI actions from WSL
+if [[ -x /mnt/c/Windows/System32/cmd.exe ]]; then
+  export BROWSER="/mnt/c/Windows/System32/cmd.exe /C start chrome"
+  alias browser='cmd.exe /C start chrome'
+else
+  export BROWSER=wslview
+fi
+
 # Docker autocomplete
 zstyle ':completion:*:*:docker:*' option-stacking yes
 zstyle ':completion:*:*:docker-*:*' option-stacking yes
