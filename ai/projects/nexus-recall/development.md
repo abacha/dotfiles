@@ -34,6 +34,15 @@
   docker compose exec api pytest backend/tests
   ```
 
+## Operational script safety
+- For backend operational scripts, prefer running them against the live container runtime DB, not the host-side `backend/data/app.db`.
+- Example safe retag usage:
+  ```bash
+  cat backend/scripts/ops/retag.py | docker compose exec -T api python - --id <conversation_id>
+  cat backend/scripts/ops/retag.py | docker compose exec -T api python - --all
+  ```
+- Only target the host DB intentionally, and only with an explicit override such as `FORCE_HOST_DB=1` when the script supports it.
+
 ## Definition of Done
 - Relevant backend/web checks pass.
 - Stack rebuilt + restarted by agent for every change (unless user explicitly waived it).

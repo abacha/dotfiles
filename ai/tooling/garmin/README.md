@@ -1,77 +1,56 @@
-# Garmin Workout Generator
+# Garmin Tooling
 
-Scripts para gerar treinos intervalados no formato TCX para Garmin.
+Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect.
 
-## Scripts
+## Dependências
 
-### generate_workout.rb
-
-Gerador Ruby simples e direto.
-
-**Usage:**
+A extração de dados da API requer a biblioteca Python `garminconnect`:
 ```bash
-./generate_workout.rb \
-  --name "5x1km" \
+pip install garminconnect
+```
+
+O gerador de TCX usa Ruby:
+```bash
+gem install builder
+```
+
+As credenciais do Garmin são necessárias para os comandos que conversam com a API (export e weight). Defina no ambiente:
+```bash
+export GARMIN_EMAIL="seu_email"
+export GARMIN_PASSWORD="sua_senha"
+```
+*(Dica: podem ser facilmente puxadas do 1Password)*
+
+## Uso: Garmin CLI
+
+O script principal é o `garmin_cli.rb`. Ele agrega as funções mais usadas:
+
+### 1. Gerar Treinos TCX (Intervalados)
+Gera treinos no formato suportado para upload no Garmin Connect:
+```bash
+./garmin_cli.rb tcx --name "5x1k" \
   --warmup 10 \
   --count 5 \
   --distance 1.0 \
   --pace 4:30 \
   --recovery 2 \
   --cooldown 10 \
-  --output workout.tcx
+  --output treino.tcx
 ```
 
-### generate_tcx.py
-
-Gerador Python com suporte a JSON config.
-
-**Usage com JSON:**
+### 2. Exportar Todo o Histórico (CSVs)
+Exporta um CSV com todas as atividades (`activities.csv`) e outro com o peso (`weight.csv`) do Connect:
 ```bash
-./generate_tcx.py --json example_workout.json
+./garmin_cli.rb export --start 2023-01-01 --outdir ~/exports/
 ```
 
-**Example JSON:**
-```json
-{
-  "name": "Interval Run",
-  "warmup_min": 10,
-  "intervals": [
-    {"distance_km": 1.0, "target_pace": "4:30"},
-    {"distance_km": 1.0, "target_pace": "4:30"}
-  ],
-  "recovery_min": 2.0,
-  "cooldown_min": 10
-}
-```
-
-## Import no Garmin
-
-1. Gere o arquivo `.tcx`
-2. Acesse Garmin Connect (web ou app)
-3. Training → Workouts → Import
-4. Faça upload do arquivo TCX
-
-## Re-sincronizar o histórico de peso
-
-O script `resync_weight_history.py` usa a biblioteca `garminconnect` para iterar pelas leituras de peso dentro de um intervalo, apagar o registro original e reaplicar o mesmo valor com os mesmos timestamps. Isso força o Garmin a recalcular percentuais e IMC usando a altura atualizada.
-
-### Exemplo de uso
-
+### 3. Histórico de Peso Resumido
+Imprime rapidamente no terminal a evolução do peso e massa muscular:
 ```bash
-GARMIN_EMAIL=seu-email GARMIN_PASSWORD=senha python resync_weight_history.py \
-  --start 2020-01-01 --end 2026-03-10 --chunk-days 90 --yes
+./garmin_cli.rb weight --months 12
 ```
 
-- `--chunk-days` controla quantos dias são lidos por chamada API (padrão 120).
-- `--dry-run` mostra o que seria feito sem tocar a conta.
-- Por padrão o script apaga cada registro antes de reimportá-lo; passe `--no-delete` se quiser manter os originais.
-- Tokens OAuth ficam em `~/.garminconnect` para agilizar execuções futuras.
-
-## Arquivos
-
-- `generate_workout.rb` - Gerador Ruby
-- `generate_tcx.py` - Gerador Python
-- `resync_weight_history.py` - Reaplica leituras para recalcular percentuais após mudança de altura
-- `example_workout.json` - Exemplo de config
-- `Sample_Intervals.tcx` - Exemplo de output
-- `README_TCX.md` - Documentação detalhada
+## Estrutura do Diretório
+- `garmin_cli.rb`: O ponto central de entrada (CLI).
+- `export_garmin_csv.py` / `fetch_weight_history.py`: Módulos em Python delegados pelo CLI Ruby para interagir com as rotas não-oficiais do Garmin.
+- `resync_weight_history.py`: Ferramenta para forçar a API a recalcular percentual de gordura após atualizar a altura no perfil.

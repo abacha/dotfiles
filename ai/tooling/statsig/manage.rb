@@ -4,6 +4,7 @@ require 'net/http'
 require 'json'
 require 'uri'
 require 'optparse'
+require 'securerandom'
 
 # Simple .env loader
 def load_env(path)
@@ -40,6 +41,8 @@ class StatsigManager
       create_entity
     when 'update'
       update_entity
+    when 'clone'
+      clone_entity
     else
       puts "Unknown command. Use --help for usage."
     end
@@ -93,16 +96,7 @@ class StatsigManager
     id = @options[:id]
     type = @options[:type]
     
-    endpoint = case type
-               when 'experiment' then "/experiments/#{id}"
-               when 'config' then "/dynamic_configs/#{id}"
-               when 'layer' then "/layers/#{id}"
-               when 'gate' then "/gates/#{id}"
-               else
-                 puts "Invalid type. Use: experiment, config, layer, gate"
-                 return
-               end
-
+    endpoint = "#{entity_endpoint(type)}/#{id}"
     response = request(:get, endpoint)
     puts JSON.pretty_generate(response)
   end
@@ -118,21 +112,17 @@ class StatsigManager
     payload = {
       name: name,
       id: id,
-      description: description
+      description: description,
+      idType: @options[:id_type] || 'userID',
+      tags: @options[:tags] || [],
+      status: @options[:status] || 'setup'
     }
 
-    endpoint = case type
-               when 'experiment'
-                 payload[:type] = 'experiment'
-                 '/experiments'
-               when 'config'
-                 '/dynamic_configs'
-               when 'gate'
-                 '/gates'
-               else
-                 puts "Invalid type for create. Use: experiment, config, gate"
-                 return
-               end
+    if type == 'experiment'
+      payload[:type] = 'experiment'
+    end
+
+    endpoint = entity_endpoint(type)
 
     response = request(:post, endpoint, payload)
     
@@ -166,14 +156,7 @@ class StatsigManager
       exit 1
     end
 
-    endpoint = case type
-               when 'experiment' then "/experiments/#{id}"
-               when 'config' then "/dynamic_configs/#{id}"
-               when 'gate' then "/gates/#{id}"
-               else
-                 puts "Invalid type for update. Use: experiment, config, gate"
-                 return
-               end
+    endpoint = "#{entity_endpoint(type)}/#{id}"
 
     response = request(:patch, endpoint, payload)
     
@@ -186,6 +169,118 @@ class StatsigManager
       puts "Successfully updated #{type}: #{id}"
       puts JSON.pretty_generate(response)
     end
+  end
+
+  def clone_entity
+    ensure_console_key!
+
+    type = @options[:type]
+    source = @options[:from]
+    unless source
+      puts "Error: --from SOURCE is required for clone."
+      exit 1
+    end
+
+    dest_id = @options[:id]
+    unless dest_id
+      puts "Error: target ID is required for clone."
+      exit 1
+    end
+
+    dest_name = @options[:name] || source
+    payload = build_clone_payload(request(:get, "#{entity_endpoint(type)}/#{source}"), dest_id, dest_name)
+
+    response = request(:post, entity_endpoint(type), payload)
+
+    if response['message']
+      puts "Error cloning #{type}: #{response['message']}"
+      if response['errors']
+        puts "Details: #{JSON.pretty_generate(response['errors'])}"
+      end
+    else
+      puts "Successfully cloned #{type}: #{dest_id}"
+      puts JSON.pretty_generate(response)
+    end
+  end
+
+  def entity_endpoint(type)
+    case type
+    when 'experiment'
+      '/experiments'
+    when 'config'
+      '/dynamic_configs'
+    when 'layer'
+      '/layers'
+    when 'gate'
+      '/gates'
+    else
+      raise "Invalid type. Use: experiment, config, layer, gate"
+    end
+  end
+
+  def build_clone_payload(source, new_id, new_name)
+    id_type = @options[:id_type] || source['idType'] || 'userID'
+    groups = clone_groups(source['groups'] || [])
+    control_group_id = groups.first && groups.first['id']
+
+    payload = {
+      'id' => new_id,
+      'name' => (new_name || source['name']),
+      'description' => @options[:description] || source['description'],
+      'idType' => id_type,
+      'targetApps' => source['targetApps'] || [],
+      'tags' => @options[:tags] || source['tags'] || [],
+      'status' => @options[:status] || 'setup',
+      'allocation' => source['allocation'],
+      'duration' => source['duration'],
+      'hypothesis' => source['hypothesis'],
+      'primaryMetrics' => source['primaryMetrics'] || [],
+      'primaryMetricTags' => source['primaryMetricTags'] || [],
+      'secondaryMetrics' => source['secondaryMetrics'] || [],
+      'secondaryMetricTags' => source['secondaryMetricTags'] || [],
+      'groups' => groups,
+      'controlGroupID' => control_group_id,
+      'inlineTargetingRules' => clone_inline_rules(source['inlineTargetingRules'], id_type),
+      'defaultConfidenceInterval' => source['defaultConfidenceInterval'],
+      'defaultRollupWindow' => source['defaultRollupWindow'],
+      'defaultChanceToBeatThreshold' => source['defaultChanceToBeatThreshold'],
+      'analyticsType' => source['analyticsType'],
+      'sequentialTesting' => source['sequentialTesting'],
+      'stratifiedSampling' => source['stratifiedSampling'],
+      'bayesianPriors' => source['bayesianPriors'],
+      'experimentType' => source['experimentType']
+    }
+
+    payload['targetingGateID'] = source['targetingGateID'] if source['targetingGateID']
+    payload
+  end
+
+  def clone_groups(groups)
+    groups.map do |group|
+      {
+        'name' => group['name'],
+        'size' => group['size'],
+        'parameterValues' => group['parameterValues'],
+        'description' => group['description'],
+        'disabled' => group['disabled'],
+        'id' => random_id
+      }
+    end
+  end
+
+  def clone_inline_rules(rules, id_type)
+    (rules || []).map do |rule|
+      cloned = rule.dup
+      cloned['idType'] = id_type
+      new_id = random_id
+      cloned['id'] = new_id
+      cloned['baseID'] = new_id
+      cloned
+    end
+  end
+
+  def random_id
+    SecureRandom.urlsafe_base64(16).tr('=', '')
   end
 
   def ensure_console_key!
@@ -232,11 +327,15 @@ OptionParser.new do |opts|
   opts.on("-d", "--description DESC", "Description for creation") { |v| options[:description] = v }
   opts.on("-k", "--key KEY", "Console API Key") { |v| options[:console_key] = v }
   opts.on("-p", "--payload JSON", "JSON Payload for update") { |v| options[:payload] = v }
+  opts.on("-f", "--from SOURCE", "Source entity ID for clone") { |v| options[:from] = v }
+  opts.on("--id-type TYPE", "Unit ID type (userID/organizationID)") { |v| options[:id_type] = v }
+  opts.on("--tags TAGS", "Comma-separated tags to apply") { |v| options[:tags] = v.split(',').map(&:strip) }
+  opts.on("--status STATUS", "Set status when creating/cloning (default: setup)") { |v| options[:status] = v }
 end.parse!
 
 if ARGV.length < 2
   puts "Usage: ./manage.rb <command> <type> [id/name]"
-  puts "Commands: list, get, create, update"
+  puts "Commands: list, get, create, update, clone"
   puts "Types: experiment, config, layer, gate"
   exit 1
 end

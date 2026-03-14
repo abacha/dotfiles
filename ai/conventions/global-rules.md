@@ -17,7 +17,3 @@
 - Always load and follow `~/dotfiles/ai/routing-policy.md` before model/task routing.
 - For deep/thorough code review requests, delegate review to Claude first.
 - Do not deviate from these routing/review guardrails unless explicitly instructed by the user.
-prefix_rule(pattern=["docker", "ps"], decision="allow")
-prefix_rule(pattern=["docker", "exec", "hs-server", "bash", "-lc"], decision="allow")
-prefix_rule(pattern=["docker", "compose", "exec", "server"], decision="allow")
-prefix_rule(pattern=["docker", "exec"], decision="allow")

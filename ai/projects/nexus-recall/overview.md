@@ -44,10 +44,11 @@ Most system behaviors are decoupled from code and live in `backend/src/app/resou
 - **Reranking:** Post-retrieval reranking via LLM to ensure the most relevant context is provided for the final answer.
 
 ## Environment & Data Rules
-- **DB Path:** `backend/data/app.db` (Mapped to Docker volume `nexus_data`).
-- **Vector Index:** `backend/data/faiss.index`.
+- **Live runtime DB:** When running via Docker Compose, the live SQLite DB used by the UI/API is `/app/data/app.db` inside the container, backed by the Docker volume `nexus_data`.
+- **Host-side DB caution:** Do **not** assume `backend/data/app.db` on the host reflects the live runtime state. Host DB mutations may not affect the running app.
+- **Vector Index:** Live runtime index is `/app/data/faiss.index` in the container volume.
 - **HMR Support:** Frontend source is volume-mapped to the container in dev mode to allow Hot Module Replacement.
-- **Port Mapping:** API runs on `:18080`, Web on `:15173`.
+- **Port Mapping:** API runs on `:19080`, Web on `:15173`.
 
 ## Related Documentation
 - [development.md](./development.md): Setup, build, and deployment workflows.

@@ -1,2 +1,5 @@
 nvim/plugin/packer_compiled.lua
 *.csv
+*.tcx
+ai/tooling/strava/strava_tokens.json
+ai/tooling/garmin/*.json
