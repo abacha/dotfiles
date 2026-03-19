@@ -3,9 +3,9 @@
 Central directory that explains what each AI folder is for and where to look next.
 
 ## Folder Roles
-- `guidelines/` — lightweight index listing every tooling or policy doc; does **not** duplicate content. Open it when you need to know “which directory holds the answer.”
-- `routing-policy.md` — global model routing, escalation, and channel-specific behavior (keep this linked in guideline indexes).
-- `conventions/` — tone, formatting, and general behavior rules that apply across all interactions.
+- `~/.openclaw/workspace/instructions/README.md` — lightweight index listing the canonical tooling and policy docs.
+- `routing-policy.md` — global model routing, escalation, and channel-specific behavior.
+- `~/.openclaw/workspace/instructions/global-rules.md` — tone, approvals, and general behavior rules that apply across all interactions.
 - `prompt-templates/` — reusable prompt patterns for orchestrating multi-step workflows.
 - `models/` — model-specific notes, overrides, and preference summaries (when you need to choose or tune Gemini vs Codex, read here).
 - `tooling/` — each tool has its own folder; keep the instructions inside that folder (README per tooling) and refer to them via `guidelines/README.md`.
@@ -23,5 +23,5 @@ Central directory that explains what each AI folder is for and where to look nex
 - `projects/climate-risk-analysis/rules.md`
 - `projects/hubstaff-server/rules.md`
 - `projects/nexus-recall/rules.md`
-- `projects/trag-web/rules.md`
 - `projects/tiao/rules.md`
+- `projects/trag-web/rules.md`

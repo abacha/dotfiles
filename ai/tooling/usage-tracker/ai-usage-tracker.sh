@@ -130,35 +130,55 @@ format_cost_value() {
 
 # ==================== CLAUDE CODE ====================
 echo "=== Claude Code Usage ==="
-CREDS_FILE="$HOME/.claude/.credentials.json"
-if [ ! -f "$CREDS_FILE" ]; then
-    echo "❌ No credentials found. Are you logged in to Claude CLI?"
-else
-    # Read the access token and expiration time
-    ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
-    EXPIRES_AT=$(jq -r '.claudeAiOauth.expiresAt // empty' "$CREDS_FILE")
 
-    if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
-        NOW_MS=$(($(date +%s) * 1000))
-        
-        # Check if expired (or expiring in next 60s)
-        if [ -n "$EXPIRES_AT" ] && [ "$NOW_MS" -gt "$((EXPIRES_AT - 60000))" ]; then
-            if command -v claude >/dev/null 2>&1; then
-                # Trigger official CLI to handle the refresh safely
-                echo "2+2" | claude >/dev/null 2>&1 || true
-                # Re-read token
-                ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
-            else
-                echo "❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
-                exit 1
+# Check environment variable first
+if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+    ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
+else
+    CREDS_FILE="$HOME/.claude/.credentials.json"
+    if [ ! -f "$CREDS_FILE" ]; then
+        echo "❌ No credentials found. Are you logged in to Claude CLI?"
+    else
+        # Read the access token and expiration time
+        ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
+        EXPIRES_AT=$(jq -r '.claudeAiOauth.expiresAt // empty' "$CREDS_FILE")
+
+        if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
+            NOW_MS=$(($(date +%s) * 1000))
+            
+            # Check if expired (or expiring in next 60s)
+            if [ -n "$EXPIRES_AT" ] && [ "$NOW_MS" -gt "$((EXPIRES_AT - 60000))" ]; then
+                # Trigger official CLI to handle the refresh safely (requires node 22+)
+                export PATH=/home/abacha/.asdf/installs/nodejs/25.7.0/bin:$PATH
+                if command -v claude >/dev/null 2>&1; then
+                    echo "2+2" | claude >/dev/null 2>&1 || true
+                    # Re-read token
+                    ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
+                else
+                    echo "❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
+                    exit 1
+                fi
             fi
         fi
+    fi
+fi
 
-        # Call the hidden OAuth Usage API
-        USAGE=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -H "anthropic-beta: oauth-2025-04-20" \
-            https://api.anthropic.com/api/oauth/usage)
+if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
+    # Call the hidden OAuth Usage API
+    USAGE=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+        -H "anthropic-beta: oauth-2025-04-20" \
+        https://api.anthropic.com/api/oauth/usage)
 
+    ERROR_MSG=$(echo "$USAGE" | jq -r '.error.message // empty')
+    if [ -n "$ERROR_MSG" ]; then
+        echo "❌ API Error: $ERROR_MSG"
+        if echo "$ERROR_MSG" | grep -q "user:profile"; then
+            echo "💡 Tip: Your token in CLAUDE_CODE_OAUTH_TOKEN lacks the 'user:profile' scope."
+            echo "   You can either generate a new token with this scope, or run 'claude login'."
+        elif echo "$ERROR_MSG" | grep -q "expired"; then
+            echo "💡 Tip: Your OAuth token has expired. Run 'claude login' to get a fresh token."
+        fi
+    else
         FIVE_PCT=$(echo "$USAGE" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
         FIVE_RESET=$(echo "$USAGE" | jq -r '.five_hour.resets_at // "N/A"')
         WEEK_PCT=$(echo "$USAGE" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
@@ -184,10 +204,10 @@ else
         echo ""
         echo "📅 Weekly (7d): $(status_emoji $WEEK_PCT) $(draw_bar $WEEK_PCT) ${WEEK_PCT}%"
         echo "   Resets in: $WEEK_LEFT"
-    else
-        echo "❌ No access token found. Are you using an API Key instead of OAuth?"
-        echo "Note: API Keys don't have a 5-hour/7-day window."
     fi
+else
+    echo "❌ No access token found. Are you using an API Key instead of OAuth?"
+    echo "Note: API Keys don't have a 5-hour/7-day window."
 fi
 
 echo ""
