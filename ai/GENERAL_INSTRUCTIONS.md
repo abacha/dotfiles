@@ -17,7 +17,7 @@ For subagents: follow the Subagent Spawn Policy in `AGENTS.md` (including sendin
 ## Documentation navigation
 - `GENERAL_INSTRUCTIONS.md`: global checklist + workflow rules.
 - `guidelines/README.md`: index to detailed guides.
-- `prompt-templates/`: canonical folder for reusable prompt templates.
+- `~/.openclaw/workspace/prompt-templates/`: canonical folder for reusable prompt templates.
 - Detailed instructions should live in their own canonical docs; this file should stay short.
 
 ## Scope boundaries

@@ -5,9 +5,8 @@ for d in "$HOME/.codex/agents" "$HOME/.claude/agents" "$HOME/.gemini/agents"; do
   [ -L "$d" ] && rm -f "$d"
   mkdir -p "$d"
   rsync -a --delete "$AI_DIR/projects/" "$d/projects/"
-  rsync -a --delete "$AI_DIR/prompt-templates/" "$d/prompt-templates/"
+  rsync -a --delete "$WORKSPACE_DIR/prompt-templates/" "$d/prompt-templates/"
   mkdir -p "$d/conventions" "$d/models" "$d/tooling"
-  cp -f "$AI_DIR/routing-policy.md" "$d/routing-policy.md"
   cp -f "$AI_DIR/conventions/global-rules.md" "$d/conventions/global-rules.md"
   cp -f "$AI_DIR/models/defaults.md" "$d/models/defaults.md"
   cp -f "$AI_DIR/tooling/coding-agent.md" "$d/tooling/coding-agent.md"
@@ -30,6 +29,10 @@ This file is local (not symlinked) by design.
 ## Include
 - `~/.claude/agents/conventions/global-rules.md`
 - `~/.claude/agents/routing-policy.md`
+EOT
+
+echo "Sync complete."
+icy.md`
 EOT
 
 echo "Sync complete."

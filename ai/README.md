@@ -14,7 +14,7 @@ Central directory that explains what each AI folder is for and where to look nex
 ## How to navigate
 1. Start from `guidelines/README.md` to find the tooling link you need (e.g., Spotify control, GitHub workflow).
 2. Follow the pointer to the specific tooling folder inside `tooling/` or the policy file (`routing-policy.md`).
-3. When unsure about tone/format, check `conventions/`; when you need a prompt pattern, open `prompt-templates/`.
+3. When unsure about tone/format, check `conventions/`; when you need a prompt pattern, open `~/.openclaw/workspace/prompt-templates/`.
 4. If you touch a tool or policy, update its own README instead of writing a new one under `guidelines/`.
 
 ## Current projects with rules
