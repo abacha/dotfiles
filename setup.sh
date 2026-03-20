@@ -4,75 +4,115 @@ set -e
 
 NODE_VERSION=20
 RUBY_VERSION=3.2.5
+PYTHON_VERSION=3.12.2
 
 # Function to install basic packages
 install_basic_packages() {
-  echo "Installing basic packages..."
+  echo "📦 Installing basic packages..."
   sudo apt install -y tmux vim zsh git most make build-essential
+}
+
+# Function to install extra packages (gh, jq, ffmpeg)
+install_extra_packages() {
+  echo "🛠️ Installing extra packages (gh, jq, ffmpeg)..."
+  # Add GitHub CLI official repository
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
+  sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+  
+  sudo apt update
+  sudo apt install -y gh jq ffmpeg
 }
 
 # Function to setup Docker
 setup_docker() {
-  echo "Setting up Docker..."
+  echo "🐳 Setting up Docker..."
   curl -sSL https://get.docker.com/ | sh
   sudo apt install -y docker-compose
   sudo gpasswd -a $USER docker
-  newgrp docker
+  newgrp docker || true
 }
 
 # Function to setup Node.js
 setup_node() {
-  echo "Setting up Node.js..."
+  echo "🟢 Setting up Node.js..."
   curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo -E bash -
   sudo apt install -y nodejs
+  
+  echo "🧶 Installing Yarn..."
+  sudo npm install -g yarn
 }
 
 # Function to setup Neovim
 setup_neovim() {
-  echo "Setting up Neovim..."
+  echo "📝 Setting up Neovim..."
   sudo add-apt-repository ppa:neovim-ppa/unstable -y
   sudo apt install neovim -y
 
-  echo "Installing packer.nvim..."
-  git clone --depth 1 https://github.com/wbthomason/packer.nvim $@ ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+  echo "🔌 Installing packer.nvim..."
+  git clone --depth 1 https://github.com/wbthomason/packer.nvim $@ ~/.local/share/nvim/site/pack/packer/start/packer.nvim || true
 
   sudo apt install ripgrep -y
 }
 
 # Function to setup ASDF
 setup_asdf() {
-  echo "Setting up ASDF..."
-  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1
+  echo "🧰 Setting up ASDF..."
+  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1 || true
 }
 
 # Function to setup Ruby
 setup_ruby() {
+  echo "💎 Setting up Ruby via ASDF..."
   sudo apt install -y openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
-  asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
+  
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git || true
   asdf install ruby $RUBY_VERSION
   asdf global ruby $RUBY_VERSION
 }
 
+# Function to setup Python
+setup_python() {
+  echo "🐍 Setting up Python via ASDF..."
+  sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+    libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+    libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  asdf plugin add python || true
+  asdf install python $PYTHON_VERSION
+  asdf global python $PYTHON_VERSION
+}
+
+# Function to setup uv
+setup_uv() {
+  echo "⚡ Installing uv (Astral's Python Manager)..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+}
+
 # Function to setup Zsh
 setup_zsh() {
-  echo "Setting up Zsh..."
-  chsh --s /bin/zsh
+  echo "🐚 Setting up Zsh..."
+  sudo chsh -s /bin/zsh $USER
+  
+  if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "✨ Installing Oh-My-Zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  fi
 
-  echo "Installing Oh-My-Zsh..."
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  echo "🎨 Installing Powerlevel10k theme..."
+  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k || true
 
-  echo "Installing Powerlevel10k theme..."
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-
-  echo "Installing Zsh plugins..."
-  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-  git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autocomplete
+  echo "🔌 Installing Zsh plugins..."
+  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true
+  git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autocomplete || true
 }
 
 # Function to create symbolic links for dotfiles
 create_symlinks() {
-  echo "Creating symbolic links for dotfiles..."
+  echo "🔗 Creating symbolic links for dotfiles..."
   ln -sf ~/dotfiles/.zshrc ~/
   ln -sf ~/dotfiles/.tmux.conf ~/
   ln -sf ~/dotfiles/.gitconfig ~/
@@ -87,20 +127,21 @@ create_symlinks() {
 
 # Function to setup Tmux
 setup_tmux() {
-  echo "Setting up Tmux..."
-  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  echo "🖥️ Setting up Tmux..."
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 }
 
 # Function to setup Tmuxinator
 setup_tmuxinator() {
-  echo "Setting up Tmuxinator..."
+  echo "🚀 Setting up Tmuxinator..."
+  source ~/.asdf/asdf.sh 2>/dev/null || true
   gem install tmuxinator
   ln -sf ~/dotfiles/.tmuxinator ~/.config/
 }
 
 # Function to setup AI config links
 setup_ai_config() {
-  echo "Setting up AI config links..."
+  echo "🤖 Setting up AI config links..."
 
   mkdir -p ~/dotfiles/ai/conventions
 
@@ -114,36 +155,68 @@ setup_ai_config() {
   ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.claude/CLAUDE.md
   ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.gemini/GEMINI.md
   ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.codex/rules/default.rules
+
+  echo "📂 Setting up project AGENTS.md symlinks..."
+  GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
+  touch "$GITIGNORE_FILE"
+  git config --global core.excludesfile "$GITIGNORE_FILE"
+  if ! grep -q "^AGENTS.md$" "$GITIGNORE_FILE"; then
+    echo "AGENTS.md" >> "$GITIGNORE_FILE"
+  fi
+
+  for const_file in ~/dotfiles/ai/constitutions/*.md; do
+    if [ -f "$const_file" ]; then
+      proj_name=$(basename "$const_file" .md)
+      
+      target_dir=$(find ~/ -maxdepth 4 -type d -name "$proj_name" 2>/dev/null | while read d; do
+        if [ -d "$d/.git" ]; then
+          echo "$d"
+          break
+        fi
+      done | head -n 1)
+
+      if [ -n "$target_dir" ] && [ -d "$target_dir" ]; then
+        rm -f "$target_dir/AGENTS.md"
+        ln -s "$const_file" "$target_dir/AGENTS.md"
+        echo "   ✅ Symlinked $proj_name -> $target_dir/AGENTS.md"
+      fi
+    fi
+  done
 }
 
 # Function to setup WSL
 setup_wsl() {
-  echo "Setting up WSL..."
+  echo "🪟 Setting up WSL..."
   sudo apt install -y xclip wslu
 }
 
 # Main function to orchestrate the setup
 main() {
+  echo "🚀 Starting dotfiles setup..."
   install_basic_packages
+  install_extra_packages
   setup_docker
   setup_node
   setup_neovim
   setup_asdf
   setup_ruby
+  setup_python
+  setup_uv
   setup_zsh
   create_symlinks
   setup_ai_config
   setup_tmux
   setup_tmuxinator
 
-  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null;
-    then
-    echo "WSL detected. Installing additional packages..."
+  if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null; then
+    echo "🐧 WSL detected. Installing additional packages..."
     setup_wsl
   fi
 
-  echo "Updating git submodules..."
+  echo "🔄 Updating git submodules..."
   git submodule update --init --recursive
+  
+  echo "🎉 Setup complete! Restart your shell or run 'exec zsh' to apply changes."
 }
 
 # If no args are passed, run the main function
