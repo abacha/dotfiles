@@ -140,6 +140,23 @@ setup_tmuxinator() {
 }
 
 # Function to setup AI config links
+# Function to setup secrets from 1Password
+setup_secrets() {
+  echo "🔐 Setting up ~/.env from 1Password..."
+  
+  if command -v op >/dev/null 2>&1; then
+    if op whoami >/dev/null 2>&1 || op account get >/dev/null 2>&1; then
+      op read "op://Personal/Dotfiles Env/text" > ~/.env 2>/dev/null && \
+      chmod 600 ~/.env && \
+      echo "✅ ~/.env created successfully."
+    else
+      echo "⚠️ 1Password CLI is not authenticated. Skip fetching .env."
+    fi
+  else
+    echo "⚠️ 1Password CLI (op) not found. Skipping secrets setup."
+  fi
+}
+
 setup_ai_config() {
   echo "🤖 Setting up AI config links..."
 
@@ -204,6 +221,7 @@ main() {
   setup_uv
   setup_zsh
   create_symlinks
+  setup_secrets
   setup_ai_config
   setup_tmux
   setup_tmuxinator

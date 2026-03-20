@@ -9,6 +9,55 @@
 
 set -e
 
+CACHE_TTL=300 # 5 minutes
+
+FRESH=0
+ONLY_CLAUDE=0
+ONLY_CODEX=0
+IS_REAL_RUN=0
+
+for arg in "$@"; do
+    case $arg in
+        --fresh) FRESH=1 ;;
+        --claude) ONLY_CLAUDE=1 ;;
+        --codex) ONLY_CODEX=1 ;;
+        --real-run) IS_REAL_RUN=1 ;;
+    esac
+done
+
+if [ "$ONLY_CLAUDE" = "0" ] && [ "$ONLY_CODEX" = "0" ]; then
+    ONLY_CLAUDE=1
+    ONLY_CODEX=1
+fi
+
+CACHE_PREFIX="ai-usage-tracker"
+if [ "$ONLY_CLAUDE" = "1" ] && [ "$ONLY_CODEX" = "0" ]; then CACHE_PREFIX="ai-usage-tracker-claude"; fi
+if [ "$ONLY_CODEX" = "1" ] && [ "$ONLY_CLAUDE" = "0" ]; then CACHE_PREFIX="ai-usage-tracker-codex"; fi
+CACHE_FILE="/tmp/${CACHE_PREFIX}-cache.txt"
+
+if [ "$IS_REAL_RUN" = "0" ]; then
+    if [ "$FRESH" = "1" ]; then
+        rm -f "$CACHE_FILE"
+    elif [ -f "$CACHE_FILE" ]; then
+        NOW=$(date +%s)
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            CACHE_MOD=$(stat -f "%m" "$CACHE_FILE" 2>/dev/null || echo 0)
+        else
+            CACHE_MOD=$(stat -c "%Y" "$CACHE_FILE" 2>/dev/null || echo 0)
+        fi
+        AGE=$((NOW - CACHE_MOD))
+        if [ "$AGE" -ge 0 ] && [ "$AGE" -lt "$CACHE_TTL" ]; then
+            cat "$CACHE_FILE"
+            echo ""
+            echo "💡 (Cached ${AGE}s ago. Run with --fresh to bypass)"
+            exit 0
+        fi
+    fi
+    
+    "$0" "$@" --real-run | tee "$CACHE_FILE"
+    exit ${PIPESTATUS[0]}
+fi
+
 # helper: draw a 10-char progress bar
 draw_bar() {
     local pct=${1:-0}
@@ -129,8 +178,7 @@ format_cost_value() {
 }
 
 # ==================== CLAUDE CODE ====================
-echo "=== Claude Code Usage ==="
-
+if [ "$ONLY_CLAUDE" = "1" ]; then
 # Check environment variable first
 if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
     ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
@@ -145,7 +193,7 @@ else
 
         if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
             NOW_MS=$(($(date +%s) * 1000))
-            
+
             # Check if expired (or expiring in next 60s)
             if [ -n "$EXPIRES_AT" ] && [ "$NOW_MS" -gt "$((EXPIRES_AT - 60000))" ]; then
                 # Trigger official CLI to handle the refresh safely (requires node 22+)
@@ -197,23 +245,22 @@ if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
         FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
         WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
 
-        echo "🦞 Claude Code Usage"
+        echo "=== 🦞 Claude Code Usage ==="
         echo ""
-        echo "⏱️  Session (5h): $(status_emoji $FIVE_PCT) $(draw_bar $FIVE_PCT) ${FIVE_PCT}%"
-        echo "   Resets in: $FIVE_LEFT"
+        printf "⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
+        printf "📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
         echo ""
-        echo "📅 Weekly (7d): $(status_emoji $WEEK_PCT) $(draw_bar $WEEK_PCT) ${WEEK_PCT}%"
-        echo "   Resets in: $WEEK_LEFT"
     fi
 else
     echo "❌ No access token found. Are you using an API Key instead of OAuth?"
     echo "Note: API Keys don't have a 5-hour/7-day window."
 fi
+fi
 
-echo ""
 # ==================== OPENAI CODEX ====================
-echo "=== OpenAI Codex Usage ==="
-echo "🤖 OpenAI Codex"
+if [ "$ONLY_CODEX" = "1" ]; then
+if [ "$ONLY_CLAUDE" = "1" ]; then echo ""; fi
+echo "=== 🤖 OpenAI Codex ==="
 echo ""
 CODEX_AUTH="$HOME/.codex/auth.json"
 if [ ! -f "$CODEX_AUTH" ]; then
@@ -227,7 +274,6 @@ else
         echo "   Info   : API keys are billed per-token without session quotas."
     else
         echo "💳 Account: Web/OAuth Token"
-        echo "   Info   : Web token parsing relies on official CodexBar CLI."
     fi
 
     # Read model from local config if available
@@ -242,29 +288,31 @@ else
     if [ -n "$CODEXBAR_BIN" ]; then
         # Check usage limits if we aren't using an apikey
         if [ "$AUTH_MODE" != "apikey" ]; then
-            USAGE_OUTPUT=$("$CODEXBAR_BIN" usage --provider codex --format json 2>/dev/null || true)
+            USAGE_OUTPUT=$("$CODEXBAR_BIN" usage --provider codex --format json 2>&1 || true)
             if [ -n "$USAGE_OUTPUT" ] && echo "$USAGE_OUTPUT" | jq -e '.[0].usage' >/dev/null 2>&1; then
                 PRIMARY_PCT=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.primary.usedPercent // empty')
                 PRIMARY_RESETS=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.primary.resetsAt // empty')
-                
+
                 SECONDARY_PCT=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.secondary.usedPercent // empty')
                 SECONDARY_RESETS=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.secondary.resetsAt // empty')
-                
+
                 if [ -n "$PRIMARY_PCT" ] && [ "$PRIMARY_PCT" != "null" ]; then
-                    echo "⏱️  Session (5h): $(status_emoji "$PRIMARY_PCT") $(draw_bar "$PRIMARY_PCT") ${PRIMARY_PCT}%"
-                    echo "   Resets in: $(format_date_and_time "$PRIMARY_RESETS")"
+                    printf "⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji "$PRIMARY_PCT")" "$(draw_bar "$PRIMARY_PCT")" "$PRIMARY_PCT" "$(format_date_and_time "$PRIMARY_RESETS")"
                 fi
                 if [ -n "$SECONDARY_PCT" ] && [ "$SECONDARY_PCT" != "null" ]; then
-                    echo "📅 Weekly (7d): $(status_emoji "$SECONDARY_PCT") $(draw_bar "$SECONDARY_PCT") ${SECONDARY_PCT}%"
-                    echo "   Resets in: $(format_date_and_time "$SECONDARY_RESETS")"
+                    printf "📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji "$SECONDARY_PCT")" "$(draw_bar "$SECONDARY_PCT")" "$SECONDARY_PCT" "$(format_date_and_time "$SECONDARY_RESETS")"
                 fi
             else
                 echo "   Info   : Could not fetch usage limits from CodexBar."
+                # Print the raw output to help debug why it failed
+                if [ -n "$USAGE_OUTPUT" ]; then
+                    echo "   Debug  : $USAGE_OUTPUT" | head -n 3
+                fi
             fi
         fi
 
         COST_OUTPUT=$("$CODEXBAR_BIN" cost --format json --provider codex 2>/dev/null || true)
-        if [ -n "$COST_OUTPUT" ] && echo "$COST_OUTPUT" | jq -e . >/dev/null 2>&1; then
+        if false && [ -n "$COST_OUTPUT" ] && echo "$COST_OUTPUT" | jq -e . >/dev/null 2>&1; then
             TOTAL_COST=$(echo "$COST_OUTPUT" | jq -r '.[0].totals.totalCost // empty')
             TOTAL_TOKENS=$(echo "$COST_OUTPUT" | jq -r '.[0].totals.totalTokens // empty')
             SESSION_TOKENS=$(echo "$COST_OUTPUT" | jq -r '.[0].sessionTokens // empty')
@@ -324,11 +372,11 @@ else
                 fi
                 echo "   Most recent day ($LAST_DAY_DATE): $(format_tokens_short "$LAST_DAY_TOKENS") tokens, cost $day_cost$day_models"
             fi
-        else
-            echo "   Info   : CodexBar cost output was invalid or empty."
+        # else
+        #     echo "   Info   : CodexBar cost output was invalid or empty."
         fi
     else
         echo "   Info   : Install CodexBar CLI (https://github.com/steipete/codexbar) to surface locally tracked usage metrics."
     fi
-
+fi
 fi
