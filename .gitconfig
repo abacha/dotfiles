@@ -39,3 +39,5 @@
   autosquash = true
 [pull]
 	rebase = true
+[core]
+	excludesfile = /home/abacha/.gitignore
