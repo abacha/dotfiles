@@ -3,11 +3,11 @@
 
 ## 1. Coding Standards & Paradigms
 - **Functional Paradigm:** Do not use classes for business logic, services, or utilities. Rely strictly on functional programming paradigms.
-- **Interfaces & Types:** All interfaces and types must be extracted into their own separate files (never inline with the implementation).
+- **Interfaces & Types:** All interfaces and types must be extracted into their own separate files (never inline with the implementation). Use interfaces for resolver return types to avoid forced `as` assertions.
 - **Naming Conventions:**
   - **Files:** `PascalCase` for Resolvers and GraphQL Types/Schemas (e.g., `AuthResolver.ts`, `LoginSchema.ts`). `camelCase` for Services, Repositories, Helpers, and utility files (e.g., `userRepository.ts`, `customErrorHandler.ts`).
-  - **Variables and Properties:** Heavily use `snake_case` for variable names, function arguments, and database fields (e.g., `user_device_info`, `start_date`, `insurance_policy_id`).
-  - **Functions and Methods:** `camelCase` (e.g., `resolveRiskType`, `customErrorHandler`).
+  - **Variables and Properties:** Heavily use `snake_case` for variable names, function arguments/parameters, and database fields (e.g., `user_device_info`, `start_date`, `insurance_policy_id`).
+  - **Functions and Methods:** `camelCase` (e.g., `resolveRiskType`, `customErrorHandler`). Maintain functions in `camelCase` even when internal variables or parameters are `snake_case`.
   - **Types and Interfaces (TypeScript):** `PascalCase` (e.g., `TriggerOptimizerOptionsInput`).
   - **Constants:** `UPPER_SNAKE_CASE` (e.g., `TRIGGER_OPTIMIZER_MIN_TARGET_RATE`).
 - **Error Handling:**
@@ -20,7 +20,7 @@
   - `src/services/`: Core business logic grouped by domain (e.g., `auth/`, `insurancePolicy/`). Keep `src/resolvers` thin.
   - `src/shared/`: Cross-cutting concerns like `config/`, `customErrors/`, `helpers/`, `middleware/`, `utils/`, `pdf/`, etc.
   - `src/resolvers/` & `src/schemas/`: GraphQL layer endpoints and TypeGraphQL classes.
-  - `src/inputs/` & `src/interfaces/`: Input arguments and TypeScript typings.
+  - `src/inputs/` & `src/interfaces/`: Input arguments and TypeScript typings. (Do not leave generic `types.ts` files inside feature folders like `core/`; always extract and move them to `interfaces`).
 - **Async & Queues:** Long-running operations, especially climatic data parsing and document generation (Proposals/Simulations PDFs via `@sparticuz/chromium`), should be offloaded to PubSub workers or PM2 async jobs to prevent GraphQL request timeouts.
 - **Document Templates & Static Assets:** All email templates, EJS/HBS PDFs for climatic reports, proposals, and simulations must remain in `src/shared/pdf` or `src/shared/emailTemplate`. Never rely on absolute paths or `__dirname` logic that fails when running the compiled JavaScript in `dist`. Use the `yarn build` pipeline's `copyfiles` process to ensure the runtime can access templates in production.
 

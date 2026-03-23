@@ -173,12 +173,15 @@ setup_ai_config() {
   ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.gemini/GEMINI.md
   ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.codex/rules/default.rules
 
-  echo "📂 Setting up project AGENTS.md symlinks..."
+  echo "📂 Setting up project AGENTS.md and CLAUDE.md symlinks..."
   GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
   touch "$GITIGNORE_FILE"
   git config --global core.excludesfile "$GITIGNORE_FILE"
   if ! grep -q "^AGENTS.md$" "$GITIGNORE_FILE"; then
     echo "AGENTS.md" >> "$GITIGNORE_FILE"
+  fi
+  if ! grep -q "^CLAUDE.md$" "$GITIGNORE_FILE"; then
+    echo "CLAUDE.md" >> "$GITIGNORE_FILE"
   fi
 
   for const_file in ~/dotfiles/ai/constitutions/*.md; do
@@ -195,7 +198,9 @@ setup_ai_config() {
       if [ -n "$target_dir" ] && [ -d "$target_dir" ]; then
         rm -f "$target_dir/AGENTS.md"
         ln -s "$const_file" "$target_dir/AGENTS.md"
-        echo "   ✅ Symlinked $proj_name -> $target_dir/AGENTS.md"
+        rm -f "$target_dir/CLAUDE.md"
+        ln -s "$const_file" "$target_dir/CLAUDE.md"
+        echo "   ✅ Symlinked $proj_name -> $target_dir/{AGENTS.md, CLAUDE.md}"
       fi
     fi
   done

@@ -53,7 +53,7 @@ if [ "$IS_REAL_RUN" = "0" ]; then
             exit 0
         fi
     fi
-    
+
     "$0" "$@" --real-run | tee "$CACHE_FILE"
     exit ${PIPESTATUS[0]}
 fi
@@ -245,8 +245,7 @@ if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
         FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
         WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
 
-        echo "=== 🦞 Claude Code Usage ==="
-        echo ""
+        echo "=== 🦞 Claude Code ==="
         printf "⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
         printf "📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
         echo ""
@@ -261,7 +260,6 @@ fi
 if [ "$ONLY_CODEX" = "1" ]; then
 if [ "$ONLY_CLAUDE" = "1" ]; then echo ""; fi
 echo "=== 🤖 OpenAI Codex ==="
-echo ""
 CODEX_AUTH="$HOME/.codex/auth.json"
 if [ ! -f "$CODEX_AUTH" ]; then
     echo "❌ No Codex credentials found at $CODEX_AUTH"
@@ -269,19 +267,11 @@ else
     AUTH_MODE=$(jq -r '.auth_mode // empty' "$CODEX_AUTH")
     if [ "$AUTH_MODE" = "apikey" ]; then
         echo "💳 Account: Pay-as-you-go (API Key)"
-        echo "📊 Session: 🟢 ██████████ [Unlimited]"
-        echo "📅 Weekly : 🟢 ██████████ [Unlimited]"
-        echo "   Info   : API keys are billed per-token without session quotas."
-    else
-        echo "💳 Account: Web/OAuth Token"
     fi
 
     # Read model from local config if available
     if [ -f "$HOME/.codex/config.toml" ]; then
         CODEX_MODEL=$(grep -E '^model[[:space:]]*=' "$HOME/.codex/config.toml" | head -n1 | cut -d'"' -f2)
-        if [ -n "$CODEX_MODEL" ]; then
-            echo "🧠 Model  : $CODEX_MODEL"
-        fi
     fi
 
     CODEXBAR_BIN=$(command -v codexbar || true)
