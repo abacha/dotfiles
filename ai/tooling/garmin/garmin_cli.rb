@@ -35,6 +35,9 @@ class GarminCLI
     when "export"
       parse_export_options!
       export_data
+    when "sleep"
+      parse_sleep_options!
+      export_sleep
     when "tcx"
       parse_tcx_options!
       generate_tcx
@@ -226,6 +229,85 @@ class GarminCLI
     puts "✅ Salvo #{activities.size} atividades em #{csv_path}"
   end
   
+  # ==========================================
+  # SLEEP COMMAND
+  # ==========================================
+
+  def parse_sleep_options!
+    @options = { start: (Date.today - 30).to_s, end: Date.today.to_s, outdir: "." }
+    OptionParser.new do |opts|
+      opts.banner = "Usage: garmin_cli.rb sleep [options]"
+      opts.on("--start DATE", "Start date (YYYY-MM-DD)") { |v| @options[:start] = v }
+      opts.on("--end DATE", "End date (YYYY-MM-DD)") { |v| @options[:end] = v }
+      opts.on("--outdir DIR", "Output directory") { |v| @options[:outdir] = v }
+    end.parse!(@args)
+  end
+
+  def export_sleep
+    client = get_client
+    outdir = File.expand_path(@options[:outdir])
+    FileUtils.mkdir_p(outdir)
+    
+    start_date = Date.parse(@options[:start])
+    end_date = Date.parse(@options[:end])
+    
+    puts "Buscando histórico de sono de #{start_date} a #{end_date}..."
+    
+    csv_path = File.join(outdir, "sleep.csv")
+    CSV.open(csv_path, "wb") do |csv|
+      csv << [
+        "date", "score", "score_qualifier", "total_sleep_hours", 
+        "deep_sleep_hours", "light_sleep_hours", "rem_sleep_hours", 
+        "awake_hours", "avg_hr", "avg_hrv", "avg_respiration", "avg_stress"
+      ]
+      
+      current_date = start_date
+      while current_date <= end_date
+        date_str = current_date.to_s
+        begin
+          data = client.sleep_data(date_str)
+          sleep_dto = data["dailySleepDTO"]
+          
+          if sleep_dto
+            score = sleep_dto.dig("sleepScores", "overall", "value")
+            qualifier = sleep_dto.dig("sleepScores", "overall", "qualifierKey")
+            
+            total_sec = sleep_dto["sleepTimeSeconds"] || 0
+            deep_sec = sleep_dto["deepSleepSeconds"] || 0
+            light_sec = sleep_dto["lightSleepSeconds"] || 0
+            rem_sec = sleep_dto["remSleepSeconds"] || 0
+            awake_sec = sleep_dto["awakeSleepSeconds"] || 0
+            
+            avg_hr = sleep_dto["avgHeartRate"]
+            avg_resp = sleep_dto["averageRespirationValue"]
+            avg_stress = sleep_dto["avgSleepStress"]
+            avg_hrv = data["avgOvernightHrv"]
+            
+            csv << [
+              date_str, 
+              score, 
+              qualifier,
+              (total_sec / 3600.0).round(2),
+              (deep_sec / 3600.0).round(2),
+              (light_sec / 3600.0).round(2),
+              (rem_sec / 3600.0).round(2),
+              (awake_sec / 3600.0).round(2),
+              avg_hr,
+              avg_hrv,
+              avg_resp,
+              avg_stress
+            ]
+          end
+        rescue => e
+          puts "Erro ao buscar dados de #{date_str}: #{e.message}"
+        end
+        current_date += 1
+      end
+    end
+    
+    puts "✅ CSV de Sono exportado para: #{csv_path}"
+  end
+
   # ==========================================
   # WEIGHT COMMAND
   # ==========================================
@@ -567,6 +649,7 @@ class GarminCLI
     puts ""
     puts "Commands:"
     puts "  export          Exporte todo o histórico (activities.csv, weight.csv)"
+    puts "  sleep           Exporta dados diários de sono em CSV"
     puts "  weight          Busca resumo do peso mensal"
     puts "  resync-weight   Ressincroniza as pesagens p/ atualizar o perfil"
     puts "  tcx             Gera treinos intervalados (formato TCX)"

@@ -54,3 +54,9 @@ Ferramenta para forçar a API a recalcular percentual de gordura (útil após at
 
 ## Estrutura do Diretório
 - `garmin_cli.rb`: O CLI unificado contendo toda a lógica de comunicação com a API.
+
+### 5. Histórico de Sono (Sleep Data)
+Exporta dados detalhados do seu sono (pontuação, duração das fases do sono, HRV, frequência cardíaca, etc).
+```bash
+./garmin_cli.rb sleep --start 2024-01-01 --end 2024-02-01 --outdir ~/exports/
+```
