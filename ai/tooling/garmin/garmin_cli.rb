@@ -35,6 +35,9 @@ class GarminCLI
     when "export"
       parse_export_options!
       export_data
+when "daily"
+  parse_daily_options!
+  export_daily
     when "sleep"
       parse_sleep_options!
       export_sleep
@@ -309,6 +312,76 @@ class GarminCLI
   end
 
   # ==========================================
+# ==========================================
+# DAILY COMMAND
+# ==========================================
+
+def parse_daily_options!
+  @options = { start: (Date.today - 30).to_s, end: Date.today.to_s, outdir: "." }
+  OptionParser.new do |opts|
+    opts.banner = "Usage: garmin_cli.rb daily [options]"
+    opts.on("--start DATE", "Start date (YYYY-MM-DD)") { |v| @options[:start] = v }
+    opts.on("--end DATE", "End date (YYYY-MM-DD)") { |v| @options[:end] = v }
+    opts.on("--outdir DIR", "Output directory") { |v| @options[:outdir] = v }
+  end.parse!(@args)
+end
+
+def export_daily
+  client = get_client
+  outdir = File.expand_path(@options[:outdir])
+  FileUtils.mkdir_p(outdir)
+  
+  start_date = Date.parse(@options[:start])
+  end_date = Date.parse(@options[:end])
+  
+  puts "Buscando histórico diário (daily summary) de #{start_date} a #{end_date}..."
+  
+  csv_path = File.join(outdir, "daily.csv")
+  CSV.open(csv_path, "wb") do |csv|
+    csv << [
+      "date", "total_steps", "total_calories", "active_calories", "bmr_calories",
+      "resting_hr", "min_hr", "max_hr", "intensity_minutes_moderate", "intensity_minutes_vigorous",
+      "avg_stress", "max_stress", "stress_percentage", 
+      "body_battery_min", "body_battery_max", "body_battery_change",
+      "floors_ascended"
+    ]
+    
+    current_date = start_date
+    while current_date <= end_date
+      date_str = current_date.to_s
+      begin
+        data = client.daily_summary(date_str)
+        if data && data["calendarDate"] == date_str
+          csv << [
+            date_str,
+            data["totalSteps"],
+            data["totalKilocalories"],
+            data["activeKilocalories"],
+            data["bmrKilocalories"],
+            data["restingHeartRate"],
+            data["minHeartRate"],
+            data["maxHeartRate"],
+            data["moderateIntensityMinutes"],
+            data["vigorousIntensityMinutes"],
+            data["averageStressLevel"],
+            data["maxStressLevel"],
+            data["stressPercentage"],
+            data["bodyBatteryLowestValue"],
+            data["bodyBatteryHighestValue"],
+            (data["bodyBatteryChargedValue"] || 0) - (data["bodyBatteryDrainedValue"] || 0),
+            data["floorsAscended"]
+          ]
+        end
+      rescue => e
+        puts "Erro ao buscar dados de #{date_str}: #{e.message}"
+      end
+      current_date += 1
+    end
+  end
+  
+  puts "✅ CSV Diário (Daily Summary) exportado para: #{csv_path}"
+end
+
   # WEIGHT COMMAND
   # ==========================================
   
@@ -649,6 +722,7 @@ class GarminCLI
     puts ""
     puts "Commands:"
     puts "  export          Exporte todo o histórico (activities.csv, weight.csv)"
+    puts "  daily           Exporta o resumo diário de saúde (passos, HR, BB, etc)"
     puts "  sleep           Exporta dados diários de sono em CSV"
     puts "  weight          Busca resumo do peso mensal"
     puts "  resync-weight   Ressincroniza as pesagens p/ atualizar o perfil"

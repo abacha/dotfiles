@@ -60,3 +60,9 @@ Exporta dados detalhados do seu sono (pontuação, duração das fases do sono, 
 ```bash
 ./garmin_cli.rb sleep --start 2024-01-01 --end 2024-02-01 --outdir ~/exports/
 ```
+
+### 6. Histórico Diário (Daily Summary)
+Exporta um resumão de saúde diário: passos, calorias gastas, Body Battery, estresse médio, frequência cardíaca (mín/máx/repouso), andares subidos e minutos de intensidade.
+```bash
+./garmin_cli.rb daily --start 2024-01-01 --end 2024-02-01 --outdir ~/exports/
+```
