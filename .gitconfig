@@ -30,7 +30,7 @@
   st = status
   pop = stash pop
   sq = rebase HEAD~20 -i --autosquash
-	fixup-first = "!f(){\n  base=\"$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')\";\n  if [ -z \"$base\" ]; then\n    if git show-ref --verify --quiet refs/remotes/origin/main; then\n      base=main;\n    else\n      base=master;\n    fi\n  fi\n  git commit --fixup=$(git rev-list --reverse --max-count=1 --grep=\"^fixup! \" --grep=\"^squash! \" --invert-grep HEAD ^origin/$base);\n}; f"
+	fixup-first = "!f(){ base=\"$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')\"; if [ -z \"$base\" ]; then if git show-ref --verify --quiet refs/remotes/origin/main; then base=main; else base=master; fi; fi; target=$(git rev-list --reverse --grep='^fixup! ' --grep='^squash! ' --invert-grep HEAD ^origin/$base | head -n 1); if [ -n \"$target\" ]; then git commit --fixup=$target; else echo 'Nenhum commit base encontrado na branch.'; fi; }; f"
 [push]
 	default = matching
 [branch]

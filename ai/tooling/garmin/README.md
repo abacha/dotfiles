@@ -1,20 +1,15 @@
 # Garmin Tooling
 
-Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect.
+Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect. Todo o fluxo foi portado para um único CLI em Ruby.
 
 ## Dependências
 
-A extração de dados da API requer a biblioteca Python `garminconnect`:
+A ferramenta agora roda 100% em Ruby usando a gem oficial \`ruby_garmin_connect\`:
 ```bash
-pip install garminconnect
+gem install ruby_garmin_connect builder csv
 ```
 
-O gerador de TCX usa Ruby:
-```bash
-gem install builder
-```
-
-As credenciais do Garmin são necessárias para os comandos que conversam com a API (export e weight). Defina no ambiente:
+As credenciais do Garmin são necessárias para os comandos que conversam com a API (export, weight, resync-weight). Defina no ambiente:
 ```bash
 export GARMIN_EMAIL="seu_email"
 export GARMIN_PASSWORD="sua_senha"
@@ -23,7 +18,7 @@ export GARMIN_PASSWORD="sua_senha"
 
 ## Uso: Garmin CLI
 
-O script principal é o `garmin_cli.rb`. Ele agrega as funções mais usadas:
+O script principal é o `garmin_cli.rb`. Ele agrega todas as funções:
 
 ### 1. Gerar Treinos TCX (Intervalados)
 Gera treinos no formato suportado para upload no Garmin Connect:
@@ -41,7 +36,7 @@ Gera treinos no formato suportado para upload no Garmin Connect:
 ### 2. Exportar Todo o Histórico (CSVs)
 Exporta um CSV com todas as atividades (`activities.csv`) e outro com o peso (`weight.csv`) do Connect:
 ```bash
-./garmin_cli.rb export --start 2023-01-01 --outdir ~/exports/
+./garmin_cli.rb export --start 2023-01-01 --end 2025-01-01 --outdir ~/exports/
 ```
 
 ### 3. Histórico de Peso Resumido
@@ -50,7 +45,12 @@ Imprime rapidamente no terminal a evolução do peso e massa muscular:
 ./garmin_cli.rb weight --months 12
 ```
 
+### 4. Ressincronizar Histórico de Peso
+Ferramenta para forçar a API a recalcular percentual de gordura (útil após atualizar a altura no perfil):
+```bash
+./garmin_cli.rb resync-weight --start 2020-01-01 --dry-run
+```
+*(Remova a flag `--dry-run` e adicione `--yes` para aplicar as modificações)*
+
 ## Estrutura do Diretório
-- `garmin_cli.rb`: O ponto central de entrada (CLI).
-- `export_garmin_csv.py` / `fetch_weight_history.py`: Módulos em Python delegados pelo CLI Ruby para interagir com as rotas não-oficiais do Garmin.
-- `resync_weight_history.py`: Ferramenta para forçar a API a recalcular percentual de gordura após atualizar a altura no perfil.
+- `garmin_cli.rb`: O CLI unificado contendo toda a lógica de comunicação com a API.

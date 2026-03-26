@@ -3,3 +3,4 @@ nvim/plugin/packer_compiled.lua
 *.tcx
 ai/tooling/strava/strava_tokens.json
 ai/tooling/garmin/*.json
+.env

@@ -1,0 +1,5 @@
+source 'https://rubygems.org'
+
+gem 'ruby_garmin_connect', '~> 0.2.1'
+gem 'builder', '~> 3.3.0'
+gem 'dotenv'
