@@ -207,9 +207,18 @@ setup_ai_config() {
 }
 
 # Function to setup WSL
+# Function to setup WSL
 setup_wsl() {
   echo "🪟 Setting up WSL..."
   sudo apt install -y xclip wslu
+
+  echo "🌐 Setting up Windows browser as default in WSL..."
+  sudo update-alternatives --set x-www-browser /usr/bin/wslview || true
+  sudo update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /usr/bin/wslview 30 || true
+  sudo update-alternatives --set gnome-www-browser /usr/bin/wslview || true
+  xdg-mime default wslview.desktop x-scheme-handler/http || true
+  xdg-mime default wslview.desktop x-scheme-handler/https || true
+  xdg-mime default wslview.desktop text/html || true
 }
 
 # Main function to orchestrate the setup
