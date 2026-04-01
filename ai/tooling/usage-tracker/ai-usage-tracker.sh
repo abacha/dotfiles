@@ -11,6 +11,9 @@ set -e
 
 CACHE_TTL=300 # 5 minutes
 
+# Make common user-level CLI locations available even in non-login shells.
+export PATH="$HOME/.local/bin:$HOME/.asdf/shims:$HOME/.asdf/bin:$PATH"
+
 FRESH=0
 ONLY_CLAUDE=0
 ONLY_CODEX=0

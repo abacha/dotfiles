@@ -2,8 +2,8 @@
 
 set -e
 
-NODE_VERSION=20
-RUBY_VERSION=3.2.5
+NODE_VERSION=25.7.0
+RUBY_VERSION=3.3.8
 PYTHON_VERSION=3.12.2
 
 # Function to install basic packages
@@ -33,14 +33,25 @@ setup_docker() {
   newgrp docker || true
 }
 
-# Function to setup Node.js
+# Function to configure npm global installs for the current user
+setup_npm_user_prefix() {
+  mkdir -p "$HOME/.local"
+  npm config set prefix "$HOME/.local"
+  export PATH="$HOME/.local/bin:$PATH"
+}
+
+# Function to setup Node.js via ASDF
 setup_node() {
-  echo "🟢 Setting up Node.js..."
-  curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION.x | sudo -E bash -
-  sudo apt install -y nodejs
-  
-  echo "🧶 Installing Yarn..."
-  sudo npm install -g yarn
+  echo "🟢 Setting up Node.js via ASDF..."
+  [ -d "$HOME/.asdf" ] || setup_asdf
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git || true
+  asdf install nodejs "$NODE_VERSION"
+  asdf global nodejs "$NODE_VERSION"
+  setup_npm_user_prefix
+
+  echo "🧶 Enabling Corepack..."
+  corepack enable || true
 }
 
 # Function to setup Neovim
@@ -91,6 +102,15 @@ setup_uv() {
   curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
+# Function to setup AI CLIs
+setup_ai_clis() {
+  echo "🤖 Installing AI CLIs..."
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  command -v npm >/dev/null 2>&1 || setup_node
+  setup_npm_user_prefix
+  npm install -g @openai/codex @google/gemini-cli @anthropic-ai/claude-code
+}
+
 # Function to setup Zsh
 setup_zsh() {
   echo "🐚 Setting up Zsh..."
@@ -119,6 +139,7 @@ create_symlinks() {
   ln -sf ~/dotfiles/.inputrc ~/
   ln -sf ~/dotfiles/.pryrc ~/
   ln -sf ~/dotfiles/.gemrc ~/
+  ln -sf ~/dotfiles/.tool-versions ~/
 
   mkdir -p ~/.config
   ln -sf ~/dotfiles/nvim ~/.config/
@@ -227,12 +248,13 @@ main() {
   install_basic_packages
   install_extra_packages
   setup_docker
+  setup_asdf
   setup_node
   setup_neovim
-  setup_asdf
   setup_ruby
   setup_python
   setup_uv
+  setup_ai_clis
   setup_zsh
   create_symlinks
   setup_secrets
@@ -251,10 +273,45 @@ main() {
   echo "🎉 Setup complete! Restart your shell or run 'exec zsh' to apply changes."
 }
 
-# If no args are passed, run the main function
+resolve_function() {
+  case "$1" in
+    basic|packages) echo "install_basic_packages" ;;
+    extra) echo "install_extra_packages" ;;
+    docker) echo "setup_docker" ;;
+    node) echo "setup_node" ;;
+    neovim|nvim) echo "setup_neovim" ;;
+    asdf) echo "setup_asdf" ;;
+    ruby) echo "setup_ruby" ;;
+    python) echo "setup_python" ;;
+    uv) echo "setup_uv" ;;
+    ai-clis|clis) echo "setup_ai_clis" ;;
+    zsh) echo "setup_zsh" ;;
+    symlinks|links) echo "create_symlinks" ;;
+    secrets) echo "setup_secrets" ;;
+    ai) echo "setup_ai_config" ;;
+    tmux) echo "setup_tmux" ;;
+    tmuxinator|mux) echo "setup_tmuxinator" ;;
+    wsl) echo "setup_wsl" ;;
+    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_ai_clis|setup_zsh|create_symlinks|setup_secrets|setup_ai_config|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
+    *) return 1 ;;
+  esac
+}
+
+usage() {
+  echo "Usage: ./setup.sh [function]"
+  echo ""
+  echo "Run without arguments to execute the full setup."
+  echo ""
+  echo "Run './setup.sh help' to see supported shorthand names."
+}
+
 if [ $# -eq 0 ]; then
   main
+elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
+  usage
 else
-  "$1"
+  fn=$(resolve_function "$1" || true)
+  [ -n "$fn" ] || { echo "Error: unknown function '$1'"; usage; exit 1; }
+  "$fn"
 fi
 exit 0
