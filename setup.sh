@@ -6,10 +6,22 @@ NODE_VERSION=25.7.0
 RUBY_VERSION=3.3.8
 PYTHON_VERSION=3.12.2
 
+apt_update_quiet() {
+  sudo apt-get update -qq >/dev/null
+}
+
+apt_install_quiet() {
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$@" >/dev/null
+}
+
+add_apt_repository_quiet() {
+  sudo add-apt-repository -y "$1" >/dev/null 2>&1
+}
+
 # Function to install basic packages
 install_basic_packages() {
   echo "📦 Installing basic packages..."
-  sudo apt install -y tmux vim zsh git most make build-essential
+  apt_install_quiet tmux vim zsh git most make build-essential bubblewrap
 }
 
 # Function to install extra packages (gh, jq, ffmpeg)
@@ -20,17 +32,26 @@ install_extra_packages() {
   sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
   
-  sudo apt update
-  sudo apt install -y gh jq ffmpeg
+  apt_update_quiet
+  apt_install_quiet gh jq ffmpeg
 }
 
 # Function to setup Docker
 setup_docker() {
   echo "🐳 Setting up Docker..."
-  curl -sSL https://get.docker.com/ | sh
-  sudo apt install -y docker-compose
-  sudo gpasswd -a $USER docker
-  newgrp docker || true
+
+  if command -v docker >/dev/null 2>&1; then
+    echo "Docker is already installed. Skipping Docker install script."
+  else
+    curl -fsSL https://get.docker.com/ | sh
+  fi
+
+  apt_install_quiet docker-compose
+
+  if getent group docker >/dev/null 2>&1 && ! id -nG "$USER" | grep -qw docker; then
+    sudo usermod -aG docker "$USER"
+    echo "Added $USER to the docker group. Restart your shell or log out/in for this to take effect."
+  fi
 }
 
 # Function to configure npm global installs for the current user
@@ -45,40 +66,58 @@ setup_node() {
   echo "🟢 Setting up Node.js via ASDF..."
   [ -d "$HOME/.asdf" ] || setup_asdf
   source ~/.asdf/asdf.sh 2>/dev/null || true
-  asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git || true
+  asdf plugin list 2>/dev/null | grep -qx nodejs || asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
   asdf install nodejs "$NODE_VERSION"
   asdf global nodejs "$NODE_VERSION"
+  asdf reshim nodejs "$NODE_VERSION"
   setup_npm_user_prefix
 
   echo "🧶 Enabling Corepack..."
-  corepack enable || true
+  if command -v corepack >/dev/null 2>&1 && [ "$(command -v corepack)" != "/usr/bin/corepack" ]; then
+    corepack enable --install-directory "$HOME/.local/bin" || true
+  else
+    echo "Corepack is not bundled with this ASDF Node install. Skipping."
+  fi
 }
 
 # Function to setup Neovim
 setup_neovim() {
   echo "📝 Setting up Neovim..."
-  sudo add-apt-repository ppa:neovim-ppa/unstable -y
-  sudo apt install neovim -y
+  add_apt_repository_quiet ppa:neovim-ppa/unstable
+  apt_install_quiet neovim
 
   echo "🔌 Installing packer.nvim..."
-  git clone --depth 1 https://github.com/wbthomason/packer.nvim $@ ~/.local/share/nvim/site/pack/packer/start/packer.nvim || true
+  if [ ! -d "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim/.git" ]; then
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim"
+  else
+    echo "packer.nvim already installed. Skipping."
+  fi
 
-  sudo apt install ripgrep -y
+  apt_install_quiet ripgrep
 }
 
 # Function to setup ASDF
 setup_asdf() {
   echo "🧰 Setting up ASDF..."
-  git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1 || true
+  if [ ! -d "$HOME/.asdf/.git" ]; then
+    git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch "v0.14.1"
+  else
+    git -C "$HOME/.asdf" fetch --tags origin
+    git -C "$HOME/.asdf" checkout "v0.14.1"
+  fi
+
+  # Make asdf available immediately within this script process.
+  export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
+  source "$HOME/.asdf/asdf.sh" 2>/dev/null || true
 }
 
 # Function to setup Ruby
 setup_ruby() {
   echo "💎 Setting up Ruby via ASDF..."
-  sudo apt install -y openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
+  apt_install_quiet openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
   
   source ~/.asdf/asdf.sh 2>/dev/null || true
-  asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git || true
+  asdf plugin list 2>/dev/null | grep -qx ruby || asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
   asdf install ruby $RUBY_VERSION
   asdf global ruby $RUBY_VERSION
 }
@@ -86,12 +125,12 @@ setup_ruby() {
 # Function to setup Python
 setup_python() {
   echo "🐍 Setting up Python via ASDF..."
-  sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+  apt_install_quiet make build-essential libssl-dev zlib1g-dev \
     libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
     libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
     
   source ~/.asdf/asdf.sh 2>/dev/null || true
-  asdf plugin add python || true
+  asdf plugin list 2>/dev/null | grep -qx python || asdf plugin add python
   asdf install python $PYTHON_VERSION
   asdf global python $PYTHON_VERSION
 }
@@ -105,14 +144,32 @@ setup_uv() {
 # Function to setup AI CLIs
 setup_ai_clis() {
   echo "🤖 Installing AI CLIs..."
+  local existing_claude_target
+
   source ~/.asdf/asdf.sh 2>/dev/null || true
   command -v npm >/dev/null 2>&1 || setup_node
   setup_npm_user_prefix
-  npm install -g @openai/codex @google/gemini-cli @anthropic-ai/claude-code
+
+  npm install -g @openai/codex || true
+  npm install -g @google/gemini-cli || true
+
+  if [ -L "$HOME/.local/bin/claude" ]; then
+    existing_claude_target="$(readlink "$HOME/.local/bin/claude")"
+  else
+    existing_claude_target=""
+  fi
+
+  if [ -e "$HOME/.local/bin/claude" ] && [[ "$existing_claude_target" != *".local/lib/node_modules/@anthropic-ai/claude-code/"* ]]; then
+    echo "Claude CLI binary already exists at ~/.local/bin/claude. Skipping npm install for @anthropic-ai/claude-code."
+  else
+    npm install -g @anthropic-ai/claude-code || true
+  fi
 }
 
 # Function to setup Zsh
 setup_zsh() {
+  local zsh_custom
+
   echo "🐚 Setting up Zsh..."
   sudo chsh -s /bin/zsh $USER
   
@@ -121,13 +178,31 @@ setup_zsh() {
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   fi
 
+  zsh_custom="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+
   echo "🎨 Installing Powerlevel10k theme..."
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k || true
+  if [ ! -d "$zsh_custom/themes/powerlevel10k/.git" ]; then
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$zsh_custom/themes/powerlevel10k"
+  else
+    echo "Powerlevel10k already installed. Skipping."
+  fi
 
   echo "🔌 Installing Zsh plugins..."
-  git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions || true
-  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting || true
-  git clone https://github.com/marlonrichert/zsh-autocomplete ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autocomplete || true
+  if [ ! -d "$zsh_custom/plugins/zsh-autosuggestions/.git" ]; then
+    git clone https://github.com/zsh-users/zsh-autosuggestions "$zsh_custom/plugins/zsh-autosuggestions"
+  else
+    echo "zsh-autosuggestions already installed. Skipping."
+  fi
+  if [ ! -d "$zsh_custom/plugins/zsh-syntax-highlighting/.git" ]; then
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$zsh_custom/plugins/zsh-syntax-highlighting"
+  else
+    echo "zsh-syntax-highlighting already installed. Skipping."
+  fi
+  if [ ! -d "$zsh_custom/plugins/zsh-autocomplete/.git" ]; then
+    git clone https://github.com/marlonrichert/zsh-autocomplete "$zsh_custom/plugins/zsh-autocomplete"
+  else
+    echo "zsh-autocomplete already installed. Skipping."
+  fi
 }
 
 # Function to create symbolic links for dotfiles
@@ -149,7 +224,11 @@ create_symlinks() {
 # Function to setup Tmux
 setup_tmux() {
   echo "🖥️ Setting up Tmux..."
-  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
+  if [ ! -d "$HOME/.tmux/plugins/tpm/.git" ]; then
+    git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+  else
+    echo "TPM already installed. Skipping."
+  fi
 }
 
 # Function to setup Tmuxinator
@@ -231,7 +310,7 @@ setup_ai_config() {
 # Function to setup WSL
 setup_wsl() {
   echo "🪟 Setting up WSL..."
-  sudo apt install -y xclip wslu
+  apt_install_quiet xclip wslu xdg-utils
 
   echo "🌐 Setting up Windows browser as default in WSL..."
   sudo update-alternatives --set x-www-browser /usr/bin/wslview || true
@@ -298,11 +377,32 @@ resolve_function() {
 }
 
 usage() {
-  echo "Usage: ./setup.sh [function]"
-  echo ""
-  echo "Run without arguments to execute the full setup."
-  echo ""
-  echo "Run './setup.sh help' to see supported shorthand names."
+  cat <<'EOF'
+Usage: ./setup.sh [function|alias]
+
+Run without arguments to execute the full setup.
+
+Supported aliases:
+  basic, packages      install_basic_packages
+  extra                install_extra_packages
+  docker               setup_docker
+  node                 setup_node
+  neovim, nvim         setup_neovim
+  asdf                 setup_asdf
+  ruby                 setup_ruby
+  python               setup_python
+  uv                   setup_uv
+  ai-clis, clis        setup_ai_clis
+  zsh                  setup_zsh
+  symlinks, links      create_symlinks
+  secrets              setup_secrets
+  ai                   setup_ai_config
+  tmux                 setup_tmux
+  tmuxinator, mux      setup_tmuxinator
+  wsl                  setup_wsl
+
+You can also pass the full function name directly.
+EOF
 }
 
 if [ $# -eq 0 ]; then

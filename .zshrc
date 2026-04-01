@@ -67,8 +67,12 @@ unsetopt correct_all
 ttyctl -f
 
 # asdf Configuration
-# append completions to fpath
-# fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
+if [ -d "${ASDF_DATA_DIR:-$HOME/.asdf}" ]; then
+  fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+  source "${ASDF_DATA_DIR:-$HOME/.asdf}/asdf.sh"
+fi
+
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
 
@@ -92,7 +96,7 @@ notes() {
 [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
 
 # OpenClaw Completion
-source "/home/abacha/.openclaw/completions/openclaw.zsh"
+[[ -f /home/abacha/.openclaw/completions/openclaw.zsh ]] && source /home/abacha/.openclaw/completions/openclaw.zsh
 
 # >>> Hubstaff SRE Toolkit >>>
 export PATH="/home/abacha/.sre-toolkit/bin:$PATH"
