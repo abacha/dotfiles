@@ -281,6 +281,7 @@ Single Rails process with Solid Queue for background jobs (Open Finance sync, im
 
 - Code: `~/projects/assimilator/`
 - Specs: `/home/abacha/.openclaw/shared-workspace/specs/assimilator/`
+- Verification: run Rails commands via Docker Compose; run specs via the dedicated test service (`docker compose run --rm test ...`) instead of the host environment
 
 ## 12. Open Questions
 
