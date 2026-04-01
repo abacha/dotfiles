@@ -1,10 +1,10 @@
 # Garmin Tooling
 
-Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect. Todo o fluxo foi portado para um único CLI em Ruby.
+Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect.
 
 ## Dependências
 
-A ferramenta agora roda 100% em Ruby usando a gem oficial \`ruby_garmin_connect\`:
+A ferramenta roda 100% em Ruby usando a gem oficial \`ruby_garmin_connect\`:
 ```bash
 gem install ruby_garmin_connect builder csv
 ```

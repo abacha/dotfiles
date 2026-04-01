@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DB_DEFAULT="/mnt/c/Users/abach/AppData/LocalLow/YARC/YARG/release/scores/scores.db"
+DB_DEFAULT="/mnt/c/Users/abach/OneDrive/Documents/Jogos/YARG/scores/scores.db"
 OUTPUT_DEFAULT=".pi/yarg_music_scores.csv"
 
 db="$DB_DEFAULT"

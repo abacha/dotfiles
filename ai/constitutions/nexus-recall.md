@@ -1,146 +1,268 @@
-# Nexus Recall — Constitution
-# Nexus Recall — Rules & Conventions
+# Nexus Recall — Agent Guide
 > Project path: `~/projects/nexus-recall`
 
+## Project
+
+Private single-user "ChatGPT with memory" system. Hybrid search (FTS5 + FAISS) over
+ingested ChatGPT exports, WhatsApp chats, OpenClaw sessions, and local files.
+LLM-powered answers with multi-provider fallback (OpenAI, Anthropic, Gemini).
+
+Stack: FastAPI, SQLite (WAL mode + FTS5), FAISS (HNSW), Pydantic v2.
+Runtime: Docker Compose. Single container, single user, single SQLite database.
+
+---
+
+## Commands
+
+| Task | Command |
+|------|---------|
+| Run backend (dev) | `cd backend && uv run uvicorn src.app.main:app --reload --port 18080` |
+| Run tests | `cd backend && uv run pytest tests/ -v` |
+| Run single test | `cd backend && uv run pytest tests/test_foo.py::test_bar -v` |
+| Run with coverage | `cd backend && uv run pytest --cov=app --cov-report=term-missing` |
+| Lint | `cd backend && uv run ruff check src/ tests/` |
+| Type check | `cd backend && uv run mypy src/` |
+| Docker build+run | `docker compose up -d --build` |
+| Ports | API :18080 (host) → 8000 (container), Web :15173 |
+
+---
+
+## Architecture
+
+```
+backend/src/app/
+├── routers/          ← Thin HTTP layer. Parse request, call service, return response.
+│     chat.py, search.py, conversations.py, messages.py, ingest.py,
+│     memories.py, local_sources.py, artifacts.py, people.py,
+│     admin.py, assets.py, context.py, settings_router.py, config.py
+│
+├── services/         ← Business logic. Receives sqlite3.Connection, raises domain errors.
+│     chat_service.py, search_service.py, conversation_service.py,
+│     ingest_service.py, memory_service.py, lock_service.py,
+│     source_service.py, admin_service.py, observability_service.py,
+│     people_service.py, job_service.py, artifact_service.py,
+│     group_service.py, message_service.py, settings_service.py
+│
+├── retrieval/        ← Search pipeline: hybrid merge, vector, lexical, rerank, context building.
+├── ingest/           ← Parsers (chatgpt, openclaw, whatsapp), chunking, tagging, cleaning.
+├── llm/providers/    ← LLM abstraction: base class, registry, per-provider implementations.
+├── models/           ← Pydantic request/response schemas.
+├── util/             ← Shared helpers (sanitize, tokens, ids, text, config_loader).
+├── queries/          ← SQL queries by domain (parameterized, never string-interpolated).
+│
+├── main.py           ← App factory only (~100 lines): create app, mount middleware, include routers.
+├── document_generation.py  ← LLM-powered document formatting (Phase 2).
+├── image_generation.py     ← DALL-E/Gemini-Image integration helper.
+├── dependencies.py   ← FastAPI dependencies: get_conn, write_lock, auth, get_provider.
+├── errors.py         ← Domain exceptions: AppError, NotFoundError, ConflictError, etc.
+├── schema.sql        ← SQLite DDL (source of truth for table definitions).
+├── migrations.py     ← Incremental schema migrations.
+├── settings.py       ← Pydantic BaseSettings, env-based configuration.
+└── db.py             ← Connection factory, WAL mode, foreign keys.
+```
+
+### Layer Rules
+
+1. **Routers** never contain business logic. They validate input, call a service method, and return the result. They do not catch domain exceptions — the global handler does.
+2. **Services** never import FastAPI or raise `HTTPException`. They raise domain exceptions from `errors.py` and call `conn.commit()` after mutations.
+3. **Services** receive a `sqlite3.Connection` as their first argument (called via `get_conn()` in the router, closed in a `finally` block).
+4. **SQL** lives in `queries/<domain>.py` as plain functions. Services never call `conn.execute()` directly. Queries raise domain exceptions (never `ValueError` or `Exception`).
+5. **No circular imports.** Dependency direction: `routers → services → queries/retrieval/ingest/llm → util`. Never backwards.
+6. Global `AppError` handler in `main.py` maps domain exceptions to HTTP responses:
+   - `NotFoundError` → 404
+   - `ForbiddenError` → 403
+   - `ConflictError` → 409
+   - `ValidationError` → 422
+   - `CapExceededError` → 429
+   - `ProviderError` → 503
+
+---
+
+## Coding Conventions
+
+### Style
+- Python 3.10+. Use `X | Y` union syntax, not `Optional[X]`.
+- Ruff for linting (line-length 120, rules: E, F, I, B, UP). No `# noqa` unless truly unavoidable.
+- Type hints on all function signatures. Avoid `Any` — use specific types or generics.
+- No docstrings on obvious functions. Add docstrings only where the *why* isn't clear from the name + types.
+
+### Naming
+- Files: `snake_case.py`. Routers named by domain (`chat.py` not `chat_router.py`).
+- Functions: `snake_case`. Private helpers prefixed with `_`.
+- Classes: `PascalCase`. Services are plain functions/modules, not singletons.
+- Constants: `UPPER_SNAKE_CASE`. Magic numbers go in `settings.py`.
+
+### Error Handling
+- Services raise domain exceptions (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`, `CapExceededError`, `ProviderError`).
+- Routers do **not** catch domain exceptions. The global `AppError` handler in `main.py` converts them to JSON automatically.
+- Routers may catch domain exceptions only when they need to add HTTP-specific context (rare).
+- Never use bare `except Exception`. Catch specific exceptions or `AppError`.
+
+### Comments
+- No commented-out code. Ever. Git has history.
+- No obvious comments. No TODO/FIXME without a linked issue.
+- Comments explain *why*, not *what*.
+
+### API Responses
+- List endpoints: `{"items": [...], "total": N}`
+- Mutations: return the created/updated resource or `{"id": "...", "status": "..."}`
+- Errors: `{"error": {"code": "NOT_FOUND", "message": "..."}}`
+- All endpoints have OpenAPI summary + description + response_model.
+
+### Date / Timestamp Standard
+- **Backend → DB:** All timestamps stored as **Unix seconds integers** (`int(time.time())`). Column names: `created_at`, `updated_at`, `started_at`, `finished_at`, etc.
+- **Backend → API:** Timestamp fields in JSON responses are **Unix seconds integers** (`int`). Never ISO strings, never milliseconds.
+- **Frontend TypeScript:** Timestamp fields typed as `number`. Convert to `Date` with `new Date(ts * 1000)`. Never `new Date(ts)` directly.
+- **Exception:** External data that arrives as ISO strings (e.g., backup metadata from filesystem) stays as `string` — label these fields clearly in the interface.
+- Never mix formats. If a field name ends in `_at` it is a Unix seconds integer unless explicitly noted otherwise.
+
+---
+
+## Testing
+
+### Standards
+- Framework: pytest + pytest-asyncio + httpx (AsyncClient).
+- Coverage target: 100% on services/utilities, ≥90% overall.
+- Every service method has at least one unit test. Every endpoint has at least one integration test.
+
+### File Naming
+- Unit tests: `test_<module>.py` (e.g., `test_chat_service.py`)
+- E2E tests: `tests/e2e/test_<flow>.py` (e.g., `test_e2e_chat_flow.py`)
+- No phase numbers, no codenames, no abbreviations in test file names.
+
+### Function Naming
+- `test_<action>_<scenario>` (e.g., `test_search_returns_empty_for_unknown_query`)
+- Use `@pytest.mark.parametrize` for input variations instead of copy-pasting tests.
+
+### Fixtures & Factories
+- Shared test data via `tests/factories.py`: `create_conversation()`, `create_message()`, `create_chunk()`.
+- Single `FakeProvider` in `tests/fake_provider.py` — no duplicating mock providers per test file.
+- Database isolation via autouse `_isolate_paths` fixture in `conftest.py`.
+- Use `db` fixture for unit tests (raw connection), `client` fixture for integration tests (AsyncClient).
+
+### E2E tests that must keep passing
+- `test_e2e_openclaw_ingest.py` — OpenClaw session ingest
+- `test_e2e_context_retrieval.py` — context retrieval with DM scope
+- `test_e2e_search_scoping.py` — search with source_channel filtering
+- `test_e2e_edge_cases.py` — edge cases (empty queries, malformed input)
+
+### What NOT to Do
+- No `unittest.mock.patch` spaghetti. Prefer dependency injection + fake implementations.
+- No polling loops (`for _ in range(20): sleep(0.05)`). Use async utilities or deterministic fakes.
+- No test data hardcoded as multi-line SQL strings. Use factories.
+- No test files at project root. All tests live in `backend/tests/`.
+
+---
+
 ## Core Product Rules
+
 1. Preserve retrieval quality and source traceability (search/chat responses must keep source snippets coherent).
 2. Do not break ingest pipeline compatibility for `.json` and `.zip` ChatGPT exports.
-3. Keep UI behavior clear for imported data vs local saved interactions (avoid confusing “recent” with DB history).
+3. Keep UI behavior clear for imported data vs local saved interactions (avoid confusing "recent" with DB history).
 4. Maintain auth/CORS safety defaults; never silently weaken API protection.
 5. Keep changes scoped; avoid mixing unrelated backend + UI refactors in one pass.
 
 ## Backend & Configuration Guardrails
 - **Config over Hardcode:** Never hardcode prompts, keyword lists, or project domains in Python. Use `backend/src/app/resources/system_config.yaml`.
-- **Pre-Storage Cleaning:** All message content must be sanitized via `cleaner.py` before being saved to the database to maintain index quality.
-- **Selective Ingestion:** Avoid importing technical noise (e.g., `tool` role messages) that degrades the human-readable memory history.
+- **All LLM prompts must live in `system_config.yaml` under the `prompts:` key.** Load them via `get_prompt("prompt_name")` from `util/config_loader.py`. Never define prompt strings inline in Python source files.
+- **Pre-Storage Cleaning:** All message content must be sanitized via `cleaner.py` before being saved to the database.
+- **Selective Ingestion:** Avoid importing technical noise (e.g., `tool` role messages) that degrades the memory history.
 
 ## API Change Guardrails
 - Keep endpoint behavior explicit and backward compatible when possible.
-- For new endpoints:
-  - add or update tests in `backend/tests/`
-  - include pagination/limit constraints for list endpoints
-  - keep auth dependency consistent with existing protected routes
+- For new endpoints: add tests, include pagination for list endpoints, keep auth consistent.
 - Avoid expensive unbounded queries; default to sensible `limit/offset` patterns.
 
 ## UI Change Guardrails
 - Keep dark theme consistency and responsive behavior.
 - Prefer additive UI (new tab/panel/filter) over replacing existing user flows unless requested.
 - Persist only lightweight UI state in localStorage; avoid storing large payloads client-side.
-# Nexus Recall — Development & Workflow
-> Project path: `~/projects/nexus-recall`
 
-## Critical Workflow Rule (User Preference)
-- **Always ensure backend code is synced to the container**:
-  - The `docker-compose.yml` should mount `./backend/src/app:/app/app` to allow live code updates.
-  - If a change isn't reflected, check the mount point or force a rebuild.
-- **After any code/config/documentation change in this project, always rebuild and restart the stack yourself**:
-  - `docker compose up -d --build`
-- Do not leave “please rebuild/restart” as a manual follow-up when the agent can do it.
-- Only skip rebuild/restart when the user explicitly says to skip it.
+---
 
-## Required Checks Before Finishing
-### Backend
-- Run targeted tests for touched backend areas:
-  - `cd backend && python -m pytest tests/test_api.py`
-- Run full backend tests when backend surface area is broad:
-  - `cd backend && python -m pytest`
+## Development & Workflow
 
-### Web
-- Always run lint on web changes:
-  - `cd web && npm run lint`
-- Run tests when UI behavior/components are changed:
-  - `cd web && npm test`
-- Build for integration-sensitive UI changes:
-  - `cd web && npm run build`
+### Ports
+| Service | Host port | Container port |
+|---------|-----------|----------------|
+| API     | **18080** | 8000           |
+| Web     | **15173** | 5173           |
+| Swagger | http://localhost:18080/docs | — |
 
-### Runtime validation
-- For every change in this project, run:
-  - `docker compose up -d --build`
-- Confirm containers are healthy before handoff.
-- When backend config/settings (`system_config.yaml`) change, prefer running the backend tests inside the API container:
-  ```
-  docker compose exec api pytest backend/tests
-  ```
+### Critical Workflow Rule
+- `docker-compose.yml` mounts `./backend/src/app:/app/app` for live reloads.
+- After any code/config change, rebuild and restart: `docker compose up -d --build`
+- Do not leave rebuild/restart as a manual follow-up — the agent does it.
 
-## Operational script safety
-- For backend operational scripts, prefer running them against the live container runtime DB, not the host-side `backend/data/app.db`.
-- Example safe retag usage:
-  ```bash
-  cat backend/scripts/ops/retag.py | docker compose exec -T api python - --id <conversation_id>
-  cat backend/scripts/ops/retag.py | docker compose exec -T api python - --all
-  ```
-- Only target the host DB intentionally, and only with an explicit override such as `FORCE_HOST_DB=1` when the script supports it.
+### Required Checks Before Finishing
+
+**Backend:**
+```bash
+cd backend && uv run pytest tests/ -v
+cd backend && uv run pytest tests/ --cov=app --cov-report=term-missing
+```
+Coverage requirements: 100% on services/utilities, ≥90% overall. Never merge a PR that drops coverage below baseline.
+
+**Web (when UI changes):**
+```bash
+cd web && npm run lint
+cd web && npm test
+cd web && npm run build
+```
+
+**Runtime validation:**
+```bash
+docker compose up -d --build
+docker compose exec api python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/health').read())"
+```
+
+### Operational DB Safety
+- Live runtime DB: `/app/data/app.db` inside the container (Docker volume `nexus_data`). Never mutate `backend/data/app.db` on the host.
+- All operational scripts were removed in Phase 1 of the refactor. Operations are now API endpoints.
+
+---
 
 ## Definition of Done
 - Relevant backend/web checks pass.
-- Stack rebuilt + restarted by agent for every change (unless user explicitly waived it).
-- Feature is manually validated in UI/API path touched.
-- Final report includes:
-  - changed files
-  - commands run
-  - test/lint/build results
-  - any known limitations/risks
+- Stack rebuilt + restarted for every change (unless user explicitly waived).
+- Coverage did not drop.
+- Final report includes: changed files, commands run, test/lint/build results, any known limitations.
 
 ## Commit/PR Hygiene
 - Keep commits objective-focused (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`).
 - Document why the change exists, not only what changed.
 - Do not commit or push unless explicitly requested.
 
+---
 
-# Project Overview & Domain Logic
+## Do NOT
 
-# Nexus Recall — Overview
-> Project path: `~/projects/nexus-recall`
+- Add backwards-compatibility shims, re-exports, or `# removed` comments. Delete cleanly.
+- Keep one-off scripts in the codebase. Operations are API endpoints with job tracking.
+- Add a message queue, ORM, or external cache. SQLite + FAISS + async jobs is the stack.
+- Create abstractions for things used once. Three similar lines > premature abstraction.
+- Add emoji to code, comments, logs, or error messages.
 
-## Scope
-- **Purpose:** Private “ChatGPT with memory” over exported ChatGPT history.
-- **Stack:**
-  - **Backend:** FastAPI + SQLite (FTS5) + FAISS (HNSW) + PyYAML.
-  - **Configuration:** Centralized in `backend/src/app/resources/system_config.yaml`.
-  - **Web:** React + Vite + TypeScript + Lucide + react-virtuoso.
-  - **Runtime:** Docker Compose (`api` + `web`).
+---
 
-## Ingestion Pipeline
-The system processes data in three main stages: Ingest -> Clean -> Tag.
+## Domain Logic Reference
 
-### 1. Ingest (`parse_export.py`)
-- Supports `.zip` (ChatGPT Export) or raw `.json` (conversations.json).
-- Extracts hierarchy (Conversations -> Messages).
-- Standardizes roles (`user`, `assistant`, `system`). **Note:** `tool` role messages are ignored during ingest as they contain internal ChatGPT noise.
+### Ingestion Pipeline
+Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 
-### 2. Clean (`cleaner.py`)
-- **Sanitization before storage:** Every message passes through the cleaner before hitting the database.
-- **Noise Removal:** Automatically strips technical JSON (IDs, width/height), voice metadada (audio_start_timestamp), and redundant system instructions.
-- **Token Replacement:** Custom tokens like `\uE200product` are replaced with human-readable labels.
-- **Durable Records:** Since cleaning happens during ingest, the database contains only readable text, improving search quality.
+1. **Ingest** (`parse_export.py`): Supports `.zip` (ChatGPT Export), raw `.json`, WhatsApp `.txt`, and Documents (PDF, MD, DOCX, etc). Standardizes roles (`user`, `assistant`, `system`). `tool` role messages are ignored.
+2. **Clean** (`cleaner.py`): Every message/chunk passes through the cleaner before being saved. Strips technical JSON, voice metadata, and custom tokens.
+3. **Format (Deferred)** (`document_generation.py`): Uploaded documents are first ingested as raw text. A background job then uses the LLM to format the text into clean Markdown (fixing headers, tables, etc.) for better retrieval quality.
+4. **Tag** (`tagging.py`): LLM-based classification (Domain, Frequency, Orthogonal). Uses messages and metadata to build rich search facets.
+5. **Vectorize** (`retrieval/vector.py`): Generates embeddings via OpenAI/Gemini for semantic search.
 
-### 3. Tagging (`tagging.py`)
-- **LLM-Based Classification:** Uses `gpt-4o-mini` to categorize conversations.
-- **Smart Sampling:** Samples 5 messages from the beginning (Head) and 5 from the end (Tail) of a conversation to provide context for the classifier.
-- **Dimensions:**
-  - **Domain:** Primary project (coding, wellness, recipes, gaming, etc.).
-  - **Frequency:** Occurrence pattern (recurring, one-off, long-running).
-  - **Orthogonal:** Cross-cutting concerns (guide, tutorial, data-tracking).
-- **Forced Overrides:** Rules in `system_config.yaml` can force domains based on keywords (e.g., "Ikariam" -> Gaming).
+### Search & Retrieval
+- **Intent-Aware Retrieval:** The system detects if the query is about a person or a general topic and balances the source distribution (WhatsApp vs. Documents vs. AI Chats) accordingly.
+- **Hybrid Search:** Combines BM25 (SQLite FTS5) with Vector Search (FAISS).
+- **Reranking:** Post-retrieval LLM scoring to select the top context candidates for the final prompt.
 
-## Configuration & Parametrization
-Most system behaviors are decoupled from code and live in `backend/src/app/resources/system_config.yaml`:
-- List of allowed domains and tags.
-- Regex and keywords for classification.
-- Prompts for LLM tagging and reranking.
-- Fallback strings for noise detection.
-
-## Search & Retrieval
-- **Hybrid Search:** Combines BM25 (SQLite FTS5) with Vector Search (FAISS + OpenAI/Gemini Embeddings).
-- **Reranking:** Post-retrieval reranking via LLM to ensure the most relevant context is provided for the final answer.
-
-## Environment & Data Rules
-- **Live runtime DB:** When running via Docker Compose, the live SQLite DB used by the UI/API is `/app/data/app.db` inside the container, backed by the Docker volume `nexus_data`.
-- **Host-side DB caution:** Do **not** assume `backend/data/app.db` on the host reflects the live runtime state. Host DB mutations may not affect the running app.
-- **Vector Index:** Live runtime index is `/app/data/faiss.index` in the container volume.
-- **HMR Support:** Frontend source is volume-mapped to the container in dev mode to allow Hot Module Replacement.
-- **Port Mapping:** API runs on `:19080`, Web on `:15173`.
-
-## Related Documentation
-- [development.md](./development.md): Setup, build, and deployment workflows.
-- [conventions.md](./conventions.md): Code style and pattern guidelines.
+### Environment & Data Rules
+- **Live runtime DB:** `/app/data/app.db` inside the container (Docker volume `nexus_data`).
+- **Host-side DB:** `backend/data/app.db` — may not reflect live state. Never assume parity.
+- **Vector Index:** `/app/data/faiss.index` in the container volume.
+- **HMR:** Frontend source is volume-mapped for Hot Module Replacement in dev.

@@ -3,10 +3,10 @@
 
 ## 1. Coding Standards & Paradigms
 - **Functional Paradigm:** Do not use classes for business logic, services, or utilities. Rely strictly on functional programming paradigms.
-- **Interfaces & Types:** All interfaces and types must be extracted into their own separate files (never inline with the implementation). Use interfaces for resolver return types to avoid forced `as` assertions.
+- **Interfaces & Types:** All interfaces and types must be extracted into their own separate files within a dedicated `interfaces/` or `types/` directory (never inline them within implementation files like `index.ts` or `calculator.ts`). Use interfaces for resolver return types to avoid forced `as` assertions.
 - **Naming Conventions:**
   - **Files:** `PascalCase` for Resolvers and GraphQL Types/Schemas (e.g., `AuthResolver.ts`, `LoginSchema.ts`). `camelCase` for Services, Repositories, Helpers, and utility files (e.g., `userRepository.ts`, `customErrorHandler.ts`).
-  - **Variables and Properties:** Heavily use `snake_case` for variable names, function arguments/parameters, and database fields (e.g., `user_device_info`, `start_date`, `insurance_policy_id`).
+  - **Variables and Properties:** Heavily use `snake_case` for all variable names, function arguments/parameters, array elements, and database fields (e.g., `user_device_info`, `start_date`, `insurance_policy_id`). Do not let JavaScript/TypeScript standard `camelCase` conventions leak into your variables.
   - **Functions and Methods:** `camelCase` (e.g., `resolveRiskType`, `customErrorHandler`). Maintain functions in `camelCase` even when internal variables or parameters are `snake_case`.
   - **Types and Interfaces (TypeScript):** `PascalCase` (e.g., `TriggerOptimizerOptionsInput`).
   - **Constants:** `UPPER_SNAKE_CASE` (e.g., `TRIGGER_OPTIMIZER_MIN_TARGET_RATE`).
@@ -17,7 +17,7 @@
 ## 2. Project Structure & Architecture
 - **Layer Isolation:** 
   - `src/db/repository/`: Abstracted database operations. No direct Prisma calls in services or resolvers.
-  - `src/services/`: Core business logic grouped by domain (e.g., `auth/`, `insurancePolicy/`). Keep `src/resolvers` thin.
+  - `src/services/`: Core business logic grouped by domain (e.g., `auth/`, `insurancePolicy/`). Keep `src/resolvers` thin. `index.ts` files within domain folders act as controllers/entrypoints and should only export the primary services called by resolvers. All auxiliary logic, helpers, and internal calculations must be extracted to separate files (e.g., `helpers.ts`, `calculator.ts`).
   - `src/shared/`: Cross-cutting concerns like `config/`, `customErrors/`, `helpers/`, `middleware/`, `utils/`, `pdf/`, etc.
   - `src/resolvers/` & `src/schemas/`: GraphQL layer endpoints and TypeGraphQL classes.
   - `src/inputs/` & `src/interfaces/`: Input arguments and TypeScript typings. (Do not leave generic `types.ts` files inside feature folders like `core/`; always extract and move them to `interfaces`).

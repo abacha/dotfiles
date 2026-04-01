@@ -259,117 +259,112 @@ else
 fi
 fi
 
+# helper: check codex auth usage
+check_codex_auth() {
+    local auth_file="$1"
+    local label="$2"
+    
+    if [ ! -f "$auth_file" ]; then return; fi
+    
+    local auth_mode
+    auth_mode=$(jq -r '.auth_mode // empty' "$auth_file")
+    
+    local email=""
+    local id_token
+    id_token=$(jq -r '.tokens.id_token // empty' "$auth_file")
+    if [ -n "$id_token" ] && [ "$id_token" != "null" ]; then
+        # very dirty JWT decode of the payload (middle segment)
+        local payload
+        payload=$(echo "$id_token" | cut -d. -f2 | tr '_-' '/+')
+        # add padding if needed
+        local padding=$((${#payload} % 4))
+        if [ $padding -eq 2 ]; then payload="${payload}=="; elif [ $padding -eq 3 ]; then payload="${payload}="; fi
+        email=$(echo "$payload" | base64 -d 2>/dev/null | jq -r '.email // empty' 2>/dev/null || true)
+    fi
+
+    if [ -n "$label" ]; then
+        if [ -n "$email" ]; then
+            echo "   [$label] ($email)"
+        else
+            echo "   [$label]"
+        fi
+    else
+        if [ -n "$email" ]; then
+            echo "   ($email)"
+        fi
+    fi
+
+    if [ "$auth_mode" = "apikey" ]; then
+        echo "   💳 Account: Pay-as-you-go (API Key)"
+        return
+    fi
+
+    local codexbar_bin
+    codexbar_bin=$(command -v codexbar || true)
+    if [ -z "$codexbar_bin" ]; then
+        echo "   Info   : Install CodexBar CLI (https://github.com/steipete/codexbar) to surface locally tracked usage metrics."
+        return
+    fi
+
+    # temporarily link auth.json to the target file so codexbar reads it
+    local temp_swap=0
+    if [ "$auth_file" != "$HOME/.codex/auth.json" ]; then
+        cp "$auth_file" "$HOME/.codex/auth.json.tmp_tracker" 2>/dev/null || true
+        cp "$HOME/.codex/auth.json" "$HOME/.codex/auth.json.backup_tracker" 2>/dev/null || true
+        cp "$auth_file" "$HOME/.codex/auth.json" 2>/dev/null || true
+        temp_swap=1
+    fi
+
+    local usage_output
+    usage_output=$("$codexbar_bin" usage --provider codex --format json 2>&1 || true)
+    
+    if [ "$temp_swap" -eq 1 ]; then
+        mv "$HOME/.codex/auth.json.backup_tracker" "$HOME/.codex/auth.json" 2>/dev/null || true
+        rm -f "$HOME/.codex/auth.json.tmp_tracker" 2>/dev/null || true
+    fi
+
+    if [ -n "$usage_output" ] && echo "$usage_output" | jq -e '.[0].usage' >/dev/null 2>&1; then
+        local primary_pct
+        primary_pct=$(echo "$usage_output" | jq -r '.[0].usage.primary.usedPercent // empty')
+        local primary_resets
+        primary_resets=$(echo "$usage_output" | jq -r '.[0].usage.primary.resetsAt // empty')
+
+        local secondary_pct
+        secondary_pct=$(echo "$usage_output" | jq -r '.[0].usage.secondary.usedPercent // empty')
+        local secondary_resets
+        secondary_resets=$(echo "$usage_output" | jq -r '.[0].usage.secondary.resetsAt // empty')
+
+        if [ -n "$primary_pct" ] && [ "$primary_pct" != "null" ]; then
+            printf "   ⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji "$primary_pct")" "$(draw_bar "$primary_pct")" "$primary_pct" "$(format_date_and_time "$primary_resets")"
+        fi
+        if [ -n "$secondary_pct" ] && [ "$secondary_pct" != "null" ]; then
+            printf "   📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji "$secondary_pct")" "$(draw_bar "$secondary_pct")" "$secondary_pct" "$(format_date_and_time "$secondary_resets")"
+        fi
+    else
+        echo "   Info   : Could not fetch usage limits."
+    fi
+}
+
 # ==================== OPENAI CODEX ====================
 if [ "$ONLY_CODEX" = "1" ]; then
 if [ "$ONLY_CLAUDE" = "1" ]; then echo ""; fi
 echo "=== 🤖 OpenAI Codex ==="
-CODEX_AUTH="$HOME/.codex/auth.json"
-if [ ! -f "$CODEX_AUTH" ]; then
-    echo "❌ No Codex credentials found at $CODEX_AUTH"
+
+if [ -f "$HOME/.codex/auth-hs.json" ] || [ -f "$HOME/.codex/auth-personal.json" ]; then
+    if [ -f "$HOME/.codex/auth-hs.json" ]; then
+        check_codex_auth "$HOME/.codex/auth-hs.json" "Hubstaff"
+        echo ""
+    fi
+    if [ -f "$HOME/.codex/auth-personal.json" ]; then
+        check_codex_auth "$HOME/.codex/auth-personal.json" "Personal"
+    fi
 else
-    AUTH_MODE=$(jq -r '.auth_mode // empty' "$CODEX_AUTH")
-    if [ "$AUTH_MODE" = "apikey" ]; then
-        echo "💳 Account: Pay-as-you-go (API Key)"
-    fi
-
-    # Read model from local config if available
-    if [ -f "$HOME/.codex/config.toml" ]; then
-        CODEX_MODEL=$(grep -E '^model[[:space:]]*=' "$HOME/.codex/config.toml" | head -n1 | cut -d'"' -f2)
-    fi
-
-    CODEXBAR_BIN=$(command -v codexbar || true)
-    if [ -n "$CODEXBAR_BIN" ]; then
-        # Check usage limits if we aren't using an apikey
-        if [ "$AUTH_MODE" != "apikey" ]; then
-            USAGE_OUTPUT=$("$CODEXBAR_BIN" usage --provider codex --format json 2>&1 || true)
-            if [ -n "$USAGE_OUTPUT" ] && echo "$USAGE_OUTPUT" | jq -e '.[0].usage' >/dev/null 2>&1; then
-                PRIMARY_PCT=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.primary.usedPercent // empty')
-                PRIMARY_RESETS=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.primary.resetsAt // empty')
-
-                SECONDARY_PCT=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.secondary.usedPercent // empty')
-                SECONDARY_RESETS=$(echo "$USAGE_OUTPUT" | jq -r '.[0].usage.secondary.resetsAt // empty')
-
-                if [ -n "$PRIMARY_PCT" ] && [ "$PRIMARY_PCT" != "null" ]; then
-                    printf "⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji "$PRIMARY_PCT")" "$(draw_bar "$PRIMARY_PCT")" "$PRIMARY_PCT" "$(format_date_and_time "$PRIMARY_RESETS")"
-                fi
-                if [ -n "$SECONDARY_PCT" ] && [ "$SECONDARY_PCT" != "null" ]; then
-                    printf "📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji "$SECONDARY_PCT")" "$(draw_bar "$SECONDARY_PCT")" "$SECONDARY_PCT" "$(format_date_and_time "$SECONDARY_RESETS")"
-                fi
-            else
-                echo "   Info   : Could not fetch usage limits from CodexBar."
-                # Print the raw output to help debug why it failed
-                if [ -n "$USAGE_OUTPUT" ]; then
-                    echo "   Debug  : $USAGE_OUTPUT" | head -n 3
-                fi
-            fi
-        fi
-
-        COST_OUTPUT=$("$CODEXBAR_BIN" cost --format json --provider codex 2>/dev/null || true)
-        if false && [ -n "$COST_OUTPUT" ] && echo "$COST_OUTPUT" | jq -e . >/dev/null 2>&1; then
-            TOTAL_COST=$(echo "$COST_OUTPUT" | jq -r '.[0].totals.totalCost // empty')
-            TOTAL_TOKENS=$(echo "$COST_OUTPUT" | jq -r '.[0].totals.totalTokens // empty')
-            SESSION_TOKENS=$(echo "$COST_OUTPUT" | jq -r '.[0].sessionTokens // empty')
-            LAST30_TOKENS=$(echo "$COST_OUTPUT" | jq -r '.[0].last30DaysTokens // empty')
-            LAST30_COST=$(echo "$COST_OUTPUT" | jq -r '.[0].last30DaysCostUSD // empty')
-            UPDATED_AT=$(echo "$COST_OUTPUT" | jq -r '.[0].updatedAt // empty')
-            SOURCE=$(echo "$COST_OUTPUT" | jq -r '.[0].source // empty')
-            SOURCE=${SOURCE:-local}
-            echo "   ⚙️ CodexBar metrics (source: $SOURCE)"
-            LATEST_DAY_JSON=$(echo "$COST_OUTPUT" | jq -c '.[0].daily | (if length > 0 then .[-1] else {} end)')
-            LAST_DAY_DATE=$(echo "$LATEST_DAY_JSON" | jq -r '.date // empty')
-            LAST_DAY_TOKENS=$(echo "$LATEST_DAY_JSON" | jq -r '(.totalTokens // (.inputTokens + .outputTokens) // empty)')
-            LAST_DAY_COST=$(echo "$LATEST_DAY_JSON" | jq -r '.totalCost // empty')
-            LAST_DAY_MODELS=$(echo "$LATEST_DAY_JSON" | jq -r '[.modelBreakdowns[]?.modelName] | unique | join(", ") // empty')
-
-            [ -z "$TOTAL_TOKENS" ] && TOTAL_TOKENS="$LAST30_TOKENS"
-            [ -z "$TOTAL_COST" ] && TOTAL_COST="$LAST30_COST"
-
-            totals_desc=""
-            if [ -n "$TOTAL_TOKENS" ]; then
-                totals_desc="$(format_tokens_short "$TOTAL_TOKENS") tokens"
-            fi
-            if [ -n "$TOTAL_COST" ]; then
-                totals_desc="${totals_desc:+$totals_desc }\$$(format_cost_value "$TOTAL_COST")"
-            fi
-            if [ -n "$totals_desc" ]; then
-                echo "   Totals (tracked): $totals_desc"
-            fi
-
-            last30_desc=""
-            if [ -n "$LAST30_TOKENS" ]; then
-                last30_desc="$(format_tokens_short "$LAST30_TOKENS") tokens"
-            fi
-            if [ -n "$LAST30_COST" ]; then
-                last30_desc="${last30_desc:+$last30_desc }\$$(format_cost_value "$LAST30_COST")"
-            fi
-            if [ -n "$last30_desc" ]; then
-                echo "   Last 30d: $last30_desc"
-            fi
-
-            if [ -n "$SESSION_TOKENS" ]; then
-                echo "   Session tokens: $(format_tokens_short "$SESSION_TOKENS")"
-            fi
-
-            if [ -n "$UPDATED_AT" ]; then
-                echo "   Updated: $(format_iso_timestamp_local "$UPDATED_AT") (source: $SOURCE)"
-            fi
-
-            if [ -n "$LAST_DAY_DATE" ]; then
-                day_cost="n/a"
-                if [ -n "$LAST_DAY_COST" ]; then
-                    day_cost="\$$(format_cost_value "$LAST_DAY_COST")"
-                fi
-                day_models=""
-                if [ -n "$LAST_DAY_MODELS" ]; then
-                    day_models=" (models: $LAST_DAY_MODELS)"
-                fi
-                echo "   Most recent day ($LAST_DAY_DATE): $(format_tokens_short "$LAST_DAY_TOKENS") tokens, cost $day_cost$day_models"
-            fi
-        # else
-        #     echo "   Info   : CodexBar cost output was invalid or empty."
-        fi
+    # Fallback to default if no specific files exist
+    if [ ! -f "$HOME/.codex/auth.json" ]; then
+        echo "❌ No Codex credentials found at $HOME/.codex/auth.json"
     else
-        echo "   Info   : Install CodexBar CLI (https://github.com/steipete/codexbar) to surface locally tracked usage metrics."
+        check_codex_auth "$HOME/.codex/auth.json" "Active"
     fi
 fi
+
 fi
