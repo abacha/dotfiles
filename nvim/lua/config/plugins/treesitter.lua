@@ -1,8 +1,15 @@
-require'nvim-treesitter.configs'.setup {
-  ensure_installed = "all",
-  ignore_install = { "ipkg" },
-  highlight = {
-    enable = true,
-    additional_vim_regex_highlighting = false,
-  },
-}
+local ok, treesitter = pcall(require, "nvim-treesitter")
+
+if not ok then
+  return
+end
+
+treesitter.setup({
+  install_dir = vim.fn.stdpath("data") .. "/site",
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+  callback = function(args)
+    pcall(vim.treesitter.start, args.buf)
+  end,
+})
