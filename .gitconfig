@@ -41,3 +41,4 @@
 	rebase = true
 [core]
 	excludesfile = /home/abacha/.gitignore
+	editor = vim
