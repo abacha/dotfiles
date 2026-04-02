@@ -683,13 +683,23 @@ end
       "endConditionValue" => @options[:cooldown_min] * 60.0
     }
 
-    puts "📡 Enviando treino para o Garmin Connect..."
-    res = client.create_running_workout(@options[:name], steps: steps)
-    
-    puts "✅ Treino criado com sucesso no Garmin Connect!"
-    if res && res["workoutId"]
-      puts "🔗 https://connect.garmin.com/modern/workout/#{res["workoutId"]}"
-    end
+puts "📡 Enviando treino para o Garmin Connect..."
+res = client.create_running_workout(@options[:name], steps: steps)
+
+puts "✅ Treino criado com sucesso no Garmin Connect!"
+if res && res["workoutId"]
+  workout_id = res["workoutId"]
+  puts "🔗 https://connect.garmin.com/modern/workout/#{workout_id}"
+  
+  puts "📅 Agendando para hoje..."
+  begin
+    client.connection.post("/workout-service/schedule/#{workout_id}", body: { date: Date.today.to_s })
+    puts "⌚ Agendado! Deve sincronizar para o relógio em breve."
+  rescue => e
+    puts "⚠️ Falha ao agendar automaticamente: #{e.message}"
+  end
+end
+
   end
 
   def print_usage
