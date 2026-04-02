@@ -604,7 +604,8 @@ end
       interval_pace_min: 4,
       interval_pace_sec: 30,
       recovery_min: 2,
-      cooldown_min: 10
+      cooldown_min: 10,
+      schedule_date: Date.today.to_s
     }
 
     OptionParser.new do |opts|
@@ -620,6 +621,7 @@ end
       end
       opts.on("-r", "--recovery MINUTES", Float, "Recovery duration (min)") { |v| @options[:recovery_min] = v }
       opts.on("-l", "--cooldown MINUTES", Integer, "Cooldown duration (min)") { |v| @options[:cooldown_min] = v }
+      opts.on("-s", "--schedule DATE", "Schedule date (YYYY-MM-DD, default: today)") { |v| @options[:schedule_date] = v }
     end.parse!(@args)
   end
 
@@ -691,9 +693,9 @@ if res && res["workoutId"]
   workout_id = res["workoutId"]
   puts "🔗 https://connect.garmin.com/modern/workout/#{workout_id}"
   
-  puts "📅 Agendando para hoje..."
+  puts "📅 Agendando para #{@options[:schedule_date]}..."
   begin
-    client.connection.post("/workout-service/schedule/#{workout_id}", body: { date: Date.today.to_s })
+    client.connection.post("/workout-service/schedule/#{workout_id}", body: { date: @options[:schedule_date] })
     puts "⌚ Agendado! Deve sincronizar para o relógio em breve."
   rescue => e
     puts "⚠️ Falha ao agendar automaticamente: #{e.message}"
@@ -718,7 +720,7 @@ end
     puts "  garmin_cli.rb export --start 2023-01-01 --outdir ."
     puts "  garmin_cli.rb weight --months 12"
     puts "  garmin_cli.rb resync-weight --start 2020-01-01 --dry-run"
-    puts "  garmin_cli.rb workout -n '5x1k' -w 10 -c 5 -d 1.0 -p 4:30 -r 2 -l 10"
+    puts "  garmin_cli.rb workout -n '5x1k' -w 10 -c 5 -d 1.0 -p 4:30 -r 2 -l 10 -s 2026-04-02"
   end
 end
 
