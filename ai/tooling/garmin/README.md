@@ -1,27 +1,27 @@
 # Garmin Tooling
 
-Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connect.
+Consolidated set of tools and scripts to interact with Garmin Connect.
 
-## Dependências
+## Dependencies
 
-A ferramenta roda 100% em Ruby usando a gem oficial \`ruby_garmin_connect\`:
+The tool runs 100% in Ruby using the official \`ruby_garmin_connect\` gem:
 ```bash
 gem install ruby_garmin_connect csv dotenv
 ```
 
-As credenciais do Garmin são necessárias para os comandos que conversam com a API (export, weight, resync-weight). Defina no ambiente:
+Garmin credentials are required for all commands that interact with the API (export, weight, resync-weight, workout, etc.). Set them in your environment:
 ```bash
-export GARMIN_EMAIL="seu_email"
-export GARMIN_PASSWORD="sua_senha"
+export GARMIN_EMAIL="your_email"
+export GARMIN_PASSWORD="your_password"
 ```
-*(Dica: podem ser facilmente puxadas do 1Password)*
+*(Tip: You can easily pull these from 1Password or a `.env` file)*
 
-## Uso: Garmin CLI
+## Usage: Garmin CLI
 
-O script principal é o `garmin_cli.rb`. Ele agrega todas as funções:
+The main script is `garmin_cli.rb`. It aggregates all functionality into a single CLI tool:
 
-### 1. Criar e Agendar Treinos (Workouts)
-Cria um treino intervalado e envia direto via API, agendando-o no seu calendário Garmin para sincronizar com o relógio:
+### 1. Create and Schedule Workouts
+Creates an interval workout and sends it directly via the Garmin API, automatically scheduling it in your Garmin calendar so it syncs to your watch:
 ```bash
 ./garmin_cli.rb workout --name "5x1k" \
   --warmup 10 \
@@ -33,37 +33,36 @@ Cria um treino intervalado e envia direto via API, agendando-o no seu calendári
   --schedule 2026-04-05
 ```
 
-
-### 2. Exportar Todo o Histórico (CSVs)
-Exporta um CSV com todas as atividades (`activities.csv`) e outro com o peso (`weight.csv`) do Connect:
+### 2. Export Full History (CSVs)
+Exports your entire activity history (`activities.csv`) and weight history (`weight.csv`) from Garmin Connect:
 ```bash
 ./garmin_cli.rb export --start 2023-01-01 --end 2025-01-01 --outdir ~/exports/
 ```
 
-### 3. Histórico de Peso Resumido
-Imprime rapidamente no terminal a evolução do peso e massa muscular:
+### 3. Weight History Summary
+Quickly prints your monthly weight and muscle mass progression to the terminal:
 ```bash
 ./garmin_cli.rb weight --months 12
 ```
 
-### 4. Ressincronizar Histórico de Peso
-Ferramenta para forçar a API a recalcular percentual de gordura (útil após atualizar a altura no perfil):
+### 4. Resync Weight History
+Forces the API to recalculate your body fat percentage across historical weigh-ins (useful if you updated your height profile):
 ```bash
 ./garmin_cli.rb resync-weight --start 2020-01-01 --dry-run
 ```
-*(Remova a flag `--dry-run` e adicione `--yes` para aplicar as modificações)*
+*(Remove `--dry-run` and add `--yes` to apply the modifications)*
 
-## Estrutura do Diretório
-- `garmin_cli.rb`: O CLI unificado contendo toda a lógica de comunicação com a API.
+## Directory Structure
+- `garmin_cli.rb`: The unified CLI containing all the API communication logic.
 
-### 5. Histórico de Sono (Sleep Data)
-Exporta dados detalhados do seu sono (pontuação, duração das fases do sono, HRV, frequência cardíaca, etc).
+### 5. Sleep History
+Exports detailed daily sleep data (sleep score, phase durations, HRV, heart rate, etc.) to a CSV file.
 ```bash
 ./garmin_cli.rb sleep --start 2024-01-01 --end 2024-02-01 --outdir ~/exports/
 ```
 
-### 6. Histórico Diário (Daily Summary)
-Exporta um resumão de saúde diário: passos, calorias gastas, Body Battery, estresse médio, frequência cardíaca (mín/máx/repouso), andares subidos e minutos de intensidade.
+### 6. Daily Summary
+Exports a daily health summary: steps, active calories, Body Battery, average stress, heart rate (min/max/resting), floors climbed, and intensity minutes.
 ```bash
 ./garmin_cli.rb daily --start 2024-01-01 --end 2024-02-01 --outdir ~/exports/
 ```
