@@ -693,7 +693,7 @@ end
           end
 
           xml.Step("xsi:type" => "Step_t") do
-            xml.StepId 99
+            xml.StepId (@options[:interval_count] * 2) + 2
             xml.Name "Cooldown"
             xml.Duration("xsi:type" => "Time_t") do
               xml.Seconds min_to_sec(@options[:cooldown_min])
