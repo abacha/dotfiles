@@ -41,9 +41,9 @@ when "daily"
     when "sleep"
       parse_sleep_options!
       export_sleep
-    when "tcx"
-      parse_tcx_options!
-      generate_tcx
+    when "workout"
+      parse_workout_options!
+      create_workout
     when "weight"
       parse_weight_options!
       fetch_weight
@@ -591,10 +591,11 @@ end
   end
 
   # ==========================================
-  # TCX GENERATOR
+  # ==========================================
+  # GARMIN WORKOUT CREATOR
   # ==========================================
   
-  def parse_tcx_options!
+  def parse_workout_options!
     @options = {
       name: "Interval Run",
       warmup_min: 10,
@@ -603,12 +604,11 @@ end
       interval_pace_min: 4,
       interval_pace_sec: 30,
       recovery_min: 2,
-      cooldown_min: 10,
-      output: "workout.tcx"
+      cooldown_min: 10
     }
 
     OptionParser.new do |opts|
-      opts.banner = "Usage: garmin_cli.rb tcx [options]"
+      opts.banner = "Usage: garmin_cli.rb workout [options]"
       opts.on("-n", "--name NAME", "Workout Name") { |v| @options[:name] = v }
       opts.on("-w", "--warmup MINUTES", Integer, "Warmup duration (min)") { |v| @options[:warmup_min] = v }
       opts.on("-c", "--count COUNT", Integer, "Number of intervals") { |v| @options[:interval_count] = v }
@@ -620,100 +620,76 @@ end
       end
       opts.on("-r", "--recovery MINUTES", Float, "Recovery duration (min)") { |v| @options[:recovery_min] = v }
       opts.on("-l", "--cooldown MINUTES", Integer, "Cooldown duration (min)") { |v| @options[:cooldown_min] = v }
-      opts.on("-o", "--output FILE", "Output filename") { |v| @options[:output] = v }
     end.parse!(@args)
   end
 
-  def min_to_sec(min)
-    (min * 60).to_i
+  def pace_to_ms(min, sec)
+    1000.0 / ((min * 60) + sec)
   end
 
-  def km_to_m(km)
-    (km * 1000).to_i
-  end
+  def create_workout
+    client = get_client
+    target_ms = pace_to_ms(@options[:interval_pace_min], @options[:interval_pace_sec])
+    target_low = target_ms * 0.95
+    target_high = target_ms * 1.05
 
-  def pace_to_speed(min, sec)
-    total_seconds = (min * 60) + sec
-    return 0 if total_seconds == 0
-    1000.0 / total_seconds
-  end
+    steps = []
+    step_order = 1
 
-  def generate_tcx
-    xml = Builder::XmlMarkup.new(indent: 2)
-    xml.instruct! :xml, encoding: "UTF-8"
+    steps << {
+      "type" => "ExecutableStepDTO",
+      "stepOrder" => step_order,
+      "stepType" => { "stepTypeId" => 1, "stepTypeKey" => "warmup", "displayOrder" => 1 },
+      "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
+      "endConditionValue" => @options[:warmup_min] * 60.0
+    }
+    step_order += 1
 
-    xml.TrainingCenterDatabase("xsi:schemaLocation" => "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd",
-                               "xmlns:ns5" => "http://www.garmin.com/xmlschemas/ActivityGoals/v1",
-                               "xmlns:ns3" => "http://www.garmin.com/xmlschemas/ActivityExtension/v2",
-                               "xmlns:ns2" => "http://www.garmin.com/xmlschemas/UserProfile/v2",
-                               "xmlns" => "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2",
-                               "xmlns:xsi" => "http://www.w3.org/2001/XMLSchema-instance",
-                               "xmlns:ns4" => "http://www.garmin.com/xmlschemas/ProfileExtension/v1") do
-      xml.Workouts do
-        xml.Workout(Sport: "Running") do
-          xml.Name @options[:name]
-          
-          xml.Step("xsi:type" => "Step_t") do
-            xml.StepId 1
-            xml.Name "Warmup"
-            xml.Duration("xsi:type" => "Time_t") do
-              xml.Seconds min_to_sec(@options[:warmup_min])
-            end
-            xml.Intensity "Active"
-            xml.Target("xsi:type" => "None_t")
-          end
-
-          (1..@options[:interval_count]).each do |i|
-            xml.Step("xsi:type" => "Step_t") do
-              xml.StepId (i * 2)
-              xml.Name "Run #{i}"
-              xml.Duration("xsi:type" => "Distance_t") do
-                xml.Meters km_to_m(@options[:interval_dist_km])
-              end
-              xml.Intensity "Active"
-              xml.Target("xsi:type" => "Speed_t") do
-                target_speed = pace_to_speed(@options[:interval_pace_min], @options[:interval_pace_sec])
-                xml.SpeedZone("xsi:type" => "CustomSpeedZone_t") do
-                  xml.ViewAs "Pace"
-                  xml.LowInMetersPerSecond target_speed * 0.95 
-                  xml.HighInMetersPerSecond target_speed * 1.05
-                end
-              end
-            end
-
-            xml.Step("xsi:type" => "Step_t") do
-              xml.StepId (i * 2) + 1
-              xml.Name "Recover #{i}"
-              xml.Duration("xsi:type" => "Time_t") do
-                xml.Seconds min_to_sec(@options[:recovery_min])
-              end
-              xml.Intensity "Resting"
-              xml.Target("xsi:type" => "None_t")
-            end
-          end
-
-          xml.Step("xsi:type" => "Step_t") do
-            xml.StepId (@options[:interval_count] * 2) + 2
-            xml.Name "Cooldown"
-            xml.Duration("xsi:type" => "Time_t") do
-              xml.Seconds min_to_sec(@options[:cooldown_min])
-            end
-            xml.Intensity "Active"
-            xml.Target("xsi:type" => "None_t")
-          end
-          
-          xml.ScheduledOn(Date.today.to_s)
-        end
-      end
+    if @options[:interval_count] > 0
+      steps << {
+        "type" => "RepeatGroupDTO",
+        "stepOrder" => step_order,
+        "stepType" => { "stepTypeId" => 6, "stepTypeKey" => "repeat", "displayOrder" => 6 },
+        "numberOfIterations" => @options[:interval_count],
+        "smartRepeat" => false,
+        "workoutSteps" => [
+          {
+            "type" => "ExecutableStepDTO",
+            "stepOrder" => step_order + 1,
+            "stepType" => { "stepTypeId" => 3, "stepTypeKey" => "interval", "displayOrder" => 3 },
+            "endCondition" => { "conditionTypeId" => 3, "conditionTypeKey" => "distance", "displayOrder" => 3, "displayable" => true },
+            "endConditionValue" => @options[:interval_dist_km] * 1000.0,
+            "targetType" => { "workoutTargetTypeId" => 6, "workoutTargetTypeKey" => "pace.zone", "displayOrder" => 6 },
+            "targetValueOne" => target_low,
+            "targetValueTwo" => target_high
+          },
+          {
+            "type" => "ExecutableStepDTO",
+            "stepOrder" => step_order + 2,
+            "stepType" => { "stepTypeId" => 4, "stepTypeKey" => "recovery", "displayOrder" => 4 },
+            "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
+            "endConditionValue" => @options[:recovery_min] * 60.0
+          }
+        ]
+      }
+      step_order += 3
     end
 
-    File.write(@options[:output], xml.target!)
-    puts "✅ TCX gerado em #{@options[:output]}"
-    puts "  - #{@options[:name]}"
-    puts "  - Warmup: #{@options[:warmup_min]} min"
-    puts "  - Intervals: #{@options[:interval_count]} x #{@options[:interval_dist_km]}km @ #{@options[:interval_pace_min]}:#{@options[:interval_pace_sec]}/km"
-    puts "  - Recovery: #{@options[:recovery_min]} min"
-    puts "  - Cooldown: #{@options[:cooldown_min]} min"
+    steps << {
+      "type" => "ExecutableStepDTO",
+      "stepOrder" => step_order,
+      "stepType" => { "stepTypeId" => 2, "stepTypeKey" => "cooldown", "displayOrder" => 2 },
+      "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
+      "endConditionValue" => @options[:cooldown_min] * 60.0
+    }
+
+    puts "📡 Enviando treino para o Garmin Connect..."
+    res = client.create_running_workout(@options[:name], steps: steps)
+    
+    puts "✅ Treino criado com sucesso no Garmin Connect!"
+    if res && res["workoutId"]
+      puts "🔗 https://connect.garmin.com/modern/workout/#{res["workoutId"]}"
+    end
   end
 
   def print_usage
@@ -726,13 +702,13 @@ end
     puts "  sleep           Exporta dados diários de sono em CSV"
     puts "  weight          Busca resumo do peso mensal"
     puts "  resync-weight   Ressincroniza as pesagens p/ atualizar o perfil"
-    puts "  tcx             Gera treinos intervalados (formato TCX)"
+    puts "  workout         Gera e envia treino pro Garmin Connect"
     puts ""
     puts "Examples:"
     puts "  garmin_cli.rb export --start 2023-01-01 --outdir ."
     puts "  garmin_cli.rb weight --months 12"
     puts "  garmin_cli.rb resync-weight --start 2020-01-01 --dry-run"
-    puts "  garmin_cli.rb tcx -n '5x1k' -w 10 -c 5 -d 1.0 -p 4:30 -r 2 -l 10 -o treino.tcx"
+    puts "  garmin_cli.rb workout -n '5x1k' -w 10 -c 5 -d 1.0 -p 4:30 -r 2 -l 10"
   end
 end
 
