@@ -619,6 +619,11 @@ end
         @options[:interval_pace_min] = m
         @options[:interval_pace_sec] = s
       end
+      opts.on("--rest-pace MIN:SEC", "Rest pace (min:sec/km) for warmup/recovery/cooldown") do |v|
+        m, s = v.split(':').map(&:to_i)
+        @options[:rest_pace_min] = m
+        @options[:rest_pace_sec] = s
+      end
       opts.on("-r", "--recovery MINUTES", Float, "Recovery duration (min)") { |v| @options[:recovery_min] = v }
       opts.on("-l", "--cooldown MINUTES", Integer, "Cooldown duration (min)") { |v| @options[:cooldown_min] = v }
       opts.on("-s", "--schedule DATE", "Schedule date (YYYY-MM-DD, default: today)") { |v| @options[:schedule_date] = v }
@@ -631,23 +636,53 @@ end
 
   def create_workout
     client = get_client
-    target_ms = pace_to_ms(@options[:interval_pace_min], @options[:interval_pace_sec])
-    target_low = target_ms * 0.95
-    target_high = target_ms * 1.05
+    
+    # +/- 5 seconds for the main interval
+    base_sec = (@options[:interval_pace_min] * 60) + @options[:interval_pace_sec]
+    target_high = 1000.0 / (base_sec - 5)
+    target_low = 1000.0 / (base_sec + 5)
+
+    rest_target_low = nil
+    rest_target_high = nil
+    if @options[:rest_pace_min]
+      # +/- 15 seconds for rest/warmup (e.g. 6:30 -> 6:15 to 6:45)
+      rest_sec = (@options[:rest_pace_min] * 60) + @options[:rest_pace_sec]
+      rest_target_high = 1000.0 / (rest_sec - 15)
+      rest_target_low = 1000.0 / (rest_sec + 15)
+    end
 
     steps = []
     step_order = 1
 
-    steps << {
+    warmup = {
       "type" => "ExecutableStepDTO",
       "stepOrder" => step_order,
       "stepType" => { "stepTypeId" => 1, "stepTypeKey" => "warmup", "displayOrder" => 1 },
       "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
       "endConditionValue" => @options[:warmup_min] * 60.0
     }
+    if rest_target_low
+      warmup["targetType"] = { "workoutTargetTypeId" => 6, "workoutTargetTypeKey" => "pace.zone", "displayOrder" => 6 }
+      warmup["targetValueOne"] = rest_target_low
+      warmup["targetValueTwo"] = rest_target_high
+    end
+    steps << warmup
     step_order += 1
 
     if @options[:interval_count] > 0
+      recovery = {
+        "type" => "ExecutableStepDTO",
+        "stepOrder" => step_order + 2,
+        "stepType" => { "stepTypeId" => 4, "stepTypeKey" => "recovery", "displayOrder" => 4 },
+        "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
+        "endConditionValue" => @options[:recovery_min] * 60.0
+      }
+      if rest_target_low
+        recovery["targetType"] = { "workoutTargetTypeId" => 6, "workoutTargetTypeKey" => "pace.zone", "displayOrder" => 6 }
+        recovery["targetValueOne"] = rest_target_low
+        recovery["targetValueTwo"] = rest_target_high
+      end
+
       steps << {
         "type" => "RepeatGroupDTO",
         "stepOrder" => step_order,
@@ -665,25 +700,25 @@ end
             "targetValueOne" => target_low,
             "targetValueTwo" => target_high
           },
-          {
-            "type" => "ExecutableStepDTO",
-            "stepOrder" => step_order + 2,
-            "stepType" => { "stepTypeId" => 4, "stepTypeKey" => "recovery", "displayOrder" => 4 },
-            "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
-            "endConditionValue" => @options[:recovery_min] * 60.0
-          }
+          recovery
         ]
       }
       step_order += 3
     end
 
-    steps << {
+    cooldown = {
       "type" => "ExecutableStepDTO",
       "stepOrder" => step_order,
       "stepType" => { "stepTypeId" => 2, "stepTypeKey" => "cooldown", "displayOrder" => 2 },
       "endCondition" => { "conditionTypeId" => 2, "conditionTypeKey" => "time", "displayOrder" => 2, "displayable" => true },
       "endConditionValue" => @options[:cooldown_min] * 60.0
     }
+    if rest_target_low
+      cooldown["targetType"] = { "workoutTargetTypeId" => 6, "workoutTargetTypeKey" => "pace.zone", "displayOrder" => 6 }
+      cooldown["targetValueOne"] = rest_target_low
+      cooldown["targetValueTwo"] = rest_target_high
+    end
+    steps << cooldown
 
 puts "📡 Enviando treino para o Garmin Connect..."
 res = client.create_running_workout(@options[:name], steps: steps)

@@ -28,6 +28,7 @@ Creates an interval workout and sends it directly via the Garmin API, automatica
   --count 5 \
   --distance 1.0 \
   --pace 4:30 \
+  --rest-pace 6:30 \
   --recovery 2 \
   --cooldown 10 \
   --schedule 2026-04-05
