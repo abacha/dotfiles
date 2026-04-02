@@ -6,7 +6,7 @@ Conjunto consolidado de ferramentas e scripts para interagir com o Garmin Connec
 
 A ferramenta roda 100% em Ruby usando a gem oficial \`ruby_garmin_connect\`:
 ```bash
-gem install ruby_garmin_connect builder csv
+gem install ruby_garmin_connect csv dotenv
 ```
 
 As credenciais do Garmin são necessárias para os comandos que conversam com a API (export, weight, resync-weight). Defina no ambiente:
@@ -20,18 +20,19 @@ export GARMIN_PASSWORD="sua_senha"
 
 O script principal é o `garmin_cli.rb`. Ele agrega todas as funções:
 
-### 1. Gerar Treinos TCX (Intervalados)
-Gera treinos no formato suportado para upload no Garmin Connect:
+### 1. Criar e Agendar Treinos (Workouts)
+Cria um treino intervalado e envia direto via API, agendando-o no seu calendário Garmin para sincronizar com o relógio:
 ```bash
-./garmin_cli.rb tcx --name "5x1k" \
+./garmin_cli.rb workout --name "5x1k" \
   --warmup 10 \
   --count 5 \
   --distance 1.0 \
   --pace 4:30 \
   --recovery 2 \
   --cooldown 10 \
-  --output treino.tcx
+  --schedule 2026-04-05
 ```
+
 
 ### 2. Exportar Todo o Histórico (CSVs)
 Exporta um CSV com todas as atividades (`activities.csv`) e outro com o peso (`weight.csv`) do Connect:
