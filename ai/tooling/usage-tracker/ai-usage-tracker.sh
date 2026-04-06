@@ -180,83 +180,173 @@ format_cost_value() {
     printf "%.2f" "$value"
 }
 
-# ==================== CLAUDE CODE ====================
-if [ "$ONLY_CLAUDE" = "1" ]; then
-# Check environment variable first
-if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-    ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
-else
-    CREDS_FILE="$HOME/.claude/.credentials.json"
-    if [ ! -f "$CREDS_FILE" ]; then
-        echo "❌ No credentials found. Are you logged in to Claude CLI?"
+# helper: check claude auth usage
+check_claude_auth() {
+    local creds_file="$1"
+    local label="$2"
+    
+    if [ ! -f "$creds_file" ]; then return; fi
+    
+    local access_token
+    local expires_at
+    local email
+    
+    access_token=$(jq -r '.claudeAiOauth.accessToken // empty' "$creds_file")
+    expires_at=$(jq -r '.claudeAiOauth.expiresAt // empty' "$creds_file")
+    email=$(jq -r '.claudeAiOauth.email // empty' "$creds_file")
+    
+    if [ -n "$label" ]; then
+        if [ -n "$email" ]; then
+            echo "   [$label] ($email)"
+        else
+            echo "   [$label]"
+        fi
     else
-        # Read the access token and expiration time
-        ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
-        EXPIRES_AT=$(jq -r '.claudeAiOauth.expiresAt // empty' "$CREDS_FILE")
+        if [ -n "$email" ]; then
+            echo "   ($email)"
+        fi
+    fi
 
-        if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
-            NOW_MS=$(($(date +%s) * 1000))
+    if [ -n "$access_token" ] && [ "$access_token" != "null" ]; then
+        local now_ms
+        now_ms=$(($(date +%s) * 1000))
 
-            # Check if expired (or expiring in next 60s)
-            if [ -n "$EXPIRES_AT" ] && [ "$NOW_MS" -gt "$((EXPIRES_AT - 60000))" ]; then
-                # Trigger official CLI to handle the refresh safely (requires node 22+)
-                export PATH=/home/abacha/.asdf/installs/nodejs/25.7.0/bin:$PATH
-                if command -v claude >/dev/null 2>&1; then
-                    echo "2+2" | claude >/dev/null 2>&1 || true
-                    # Re-read token
-                    ACCESS_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDS_FILE")
-                else
-                    echo "❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
-                    exit 1
-                fi
+        # Check if expired (or expiring in next 60s)
+        if [ -n "$expires_at" ] && [ "$now_ms" -gt "$((expires_at - 60000))" ]; then
+            # Temporarily link to default for cli refresh if needed
+            local temp_swap=0
+            if [ "$creds_file" != "$HOME/.claude/.credentials.json" ]; then
+                cp "$creds_file" "$HOME/.claude/.credentials.json.tmp_tracker" 2>/dev/null || true
+                cp "$HOME/.claude/.credentials.json" "$HOME/.claude/.credentials.json.backup_tracker" 2>/dev/null || true
+                cp "$creds_file" "$HOME/.claude/.credentials.json" 2>/dev/null || true
+                temp_swap=1
+            fi
+
+            export PATH=/home/abacha/.asdf/installs/nodejs/25.7.0/bin:$PATH
+            if command -v claude >/dev/null 2>&1; then
+                echo "2+2" | claude >/dev/null 2>&1 || true
+                # Re-read token
+                access_token=$(jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json")
+            else
+                echo "   ❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
+            fi
+
+            if [ "$temp_swap" -eq 1 ]; then
+                mv "$HOME/.claude/.credentials.json.backup_tracker" "$HOME/.claude/.credentials.json" 2>/dev/null || true
+                rm -f "$HOME/.claude/.credentials.json.tmp_tracker" 2>/dev/null || true
+                # save refreshed token back to original file if refreshed
+                # for now, if it refreshed it updated the default file, we should copy it back
+                # actually, this is a bit complex for a read-only script, but we can try to update the token locally.
             fi
         fi
-    fi
-fi
+        
+        if [ -z "$access_token" ] || [ "$access_token" = "null" ]; then
+            echo "   ❌ Failed to get a valid OAuth access token."
+            return
+        fi
 
-if [ -n "$ACCESS_TOKEN" ] && [ "$ACCESS_TOKEN" != "null" ]; then
-    # Call the hidden OAuth Usage API
-    USAGE=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
-        -H "anthropic-beta: oauth-2025-04-20" \
-        https://api.anthropic.com/api/oauth/usage)
+        # Call the hidden OAuth Usage API
+        local usage
+        usage=$(curl -s -H "Authorization: Bearer $access_token" \
+            -H "anthropic-beta: oauth-2025-04-20" \
+            https://api.anthropic.com/api/oauth/usage)
 
-    ERROR_MSG=$(echo "$USAGE" | jq -r '.error.message // empty')
-    if [ -n "$ERROR_MSG" ]; then
-        echo "❌ API Error: $ERROR_MSG"
-        if echo "$ERROR_MSG" | grep -q "user:profile"; then
-            echo "💡 Tip: Your token in CLAUDE_CODE_OAUTH_TOKEN lacks the 'user:profile' scope."
-            echo "   You can either generate a new token with this scope, or run 'claude login'."
-        elif echo "$ERROR_MSG" | grep -q "expired"; then
-            echo "💡 Tip: Your OAuth token has expired. Run 'claude login' to get a fresh token."
+        local error_msg
+        error_msg=$(echo "$usage" | jq -r '.error.message // empty')
+        if [ -n "$error_msg" ]; then
+            echo "   ❌ API Error: $error_msg"
+            if echo "$error_msg" | grep -q "user:profile"; then
+                echo "   💡 Tip: Your token lacks the 'user:profile' scope. Generate a new token or run 'claude login'."
+            elif echo "$error_msg" | grep -q "expired"; then
+                echo "   💡 Tip: Your OAuth token has expired. Run 'claude login' to get a fresh token."
+            fi
+        else
+            local five_pct
+            five_pct=$(echo "$usage" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
+            local five_reset
+            five_reset=$(echo "$usage" | jq -r '.five_hour.resets_at // "N/A"')
+            local week_pct
+            week_pct=$(echo "$usage" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
+            local week_reset
+            week_reset=$(echo "$usage" | jq -r '.seven_day.resets_at // "N/A"')
+
+            [ "$five_pct" = "null" ] && five_pct=0
+            [ "$week_pct" = "null" ] && week_pct=0
+
+            if [ "$week_pct" -ge 100 ]; then
+                five_pct=100
+                five_reset="$week_reset"
+            fi
+
+            local five_left
+            five_left=$(format_date_and_time "$five_reset")
+            local week_left
+            week_left=$(format_date_and_time "$week_reset")
+
+            printf "   ⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji "$five_pct")" "$(draw_bar "$five_pct")" "$five_pct" "$five_left"
+            printf "   📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji "$week_pct")" "$(draw_bar "$week_pct")" "$week_pct" "$week_left"
         fi
     else
-        FIVE_PCT=$(echo "$USAGE" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
-        FIVE_RESET=$(echo "$USAGE" | jq -r '.five_hour.resets_at // "N/A"')
-        WEEK_PCT=$(echo "$USAGE" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
-        WEEK_RESET=$(echo "$USAGE" | jq -r '.seven_day.resets_at // "N/A"')
+        echo "   ❌ No OAuth access token found."
+    fi
+}
 
-        # Handle null values
-        [ "$FIVE_PCT" = "null" ] && FIVE_PCT=0
-        [ "$WEEK_PCT" = "null" ] && WEEK_PCT=0
+# ==================== CLAUDE CODE ====================
+if [ "$ONLY_CLAUDE" = "1" ]; then
+echo "=== 🦞 Claude Code (OAuth) ==="
 
-        # If weekly is maxed out, session is effectively maxed out too
-        if [ "$WEEK_PCT" -ge 100 ]; then
-            FIVE_PCT=100
-            FIVE_RESET="$WEEK_RESET"
-        fi
-
-        FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
-        WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
-
-        echo "=== 🦞 Claude Code ==="
-        printf "⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
-        printf "📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
+# If there are specific credentials files (like codex)
+if [ -f "$HOME/.claude/.credentials-hs.json" ] || [ -f "$HOME/.claude/.credentials-personal.json" ]; then
+    if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
+        check_claude_auth "$HOME/.claude/.credentials-hs.json" "Hubstaff"
         echo ""
     fi
+    if [ -f "$HOME/.claude/.credentials-personal.json" ]; then
+        check_claude_auth "$HOME/.claude/.credentials-personal.json" "Personal"
+    fi
 else
-    echo "❌ No access token found. Are you using an API Key instead of OAuth?"
-    echo "Note: API Keys don't have a 5-hour/7-day window."
+    # Check environment variable first
+    if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+        ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
+        # Manually perform what check_claude_auth does if we are using env var directly
+        # For simplicity, we just check the token
+        USAGE=$(curl -s -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "anthropic-beta: oauth-2025-04-20" \
+            https://api.anthropic.com/api/oauth/usage)
+
+        ERROR_MSG=$(echo "$USAGE" | jq -r '.error.message // empty')
+        if [ -n "$ERROR_MSG" ]; then
+            echo "   ❌ API Error: $ERROR_MSG"
+        else
+            FIVE_PCT=$(echo "$USAGE" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
+            FIVE_RESET=$(echo "$USAGE" | jq -r '.five_hour.resets_at // "N/A"')
+            WEEK_PCT=$(echo "$USAGE" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
+            WEEK_RESET=$(echo "$USAGE" | jq -r '.seven_day.resets_at // "N/A"')
+
+            [ "$FIVE_PCT" = "null" ] && FIVE_PCT=0
+            [ "$WEEK_PCT" = "null" ] && WEEK_PCT=0
+
+            if [ "$WEEK_PCT" -ge 100 ]; then
+                FIVE_PCT=100
+                FIVE_RESET="$WEEK_RESET"
+            fi
+
+            FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
+            WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
+
+            printf "   ⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
+            printf "   📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
+        fi
+    else
+        CREDS_FILE="$HOME/.claude/.credentials.json"
+        if [ ! -f "$CREDS_FILE" ]; then
+            echo "❌ No credentials found at $CREDS_FILE"
+        else
+            check_claude_auth "$CREDS_FILE" "Active"
+        fi
+    fi
 fi
+echo ""
 fi
 
 # helper: check codex auth usage

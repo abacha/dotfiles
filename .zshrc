@@ -106,3 +106,8 @@ export PATH="/home/abacha/.sre-toolkit/bin:$PATH"
 alias codex-hs="cp ~/.codex/auth-hs.json ~/.codex/auth.json && echo 'Codex switched to Hubstaff (hs)'"
 alias codex-personal="cp ~/.codex/auth-personal.json ~/.codex/auth.json && echo 'Codex switched to Personal'"
 export EDITOR="vim"
+
+# Claude Auth Rotation
+alias claude-hs="cp ~/.claude/.credentials-hs.json ~/.claude/.credentials.json && echo 'Claude switched to Hubstaff (hs)'"
+alias claude-personal="cp ~/.claude/.credentials-personal.json ~/.claude/.credentials.json && echo 'Claude switched to Personal'"
+

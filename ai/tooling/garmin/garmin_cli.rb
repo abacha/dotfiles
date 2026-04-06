@@ -50,6 +50,9 @@ when "daily"
     when "resync-weight"
       parse_resync_options!
       resync_weight
+    when "custom-workout"
+      parse_custom_workout_options!
+      create_custom_workout
     else
       print_usage
     end
@@ -739,6 +742,74 @@ end
 
   end
 
+  # ==========================================
+  # CUSTOM WORKOUT CREATOR
+  # ==========================================
+
+  def parse_custom_workout_options!
+    @options = {
+      name: "Custom Run",
+      schedule_date: Date.today.to_s,
+      json_payload: nil
+    }
+
+    OptionParser.new do |opts|
+      opts.banner = "Usage: garmin_cli.rb custom-workout [options]"
+      opts.on("-n", "--name NAME", "Workout Name") { |v| @options[:name] = v }
+      opts.on("-s", "--schedule DATE", "Schedule date (YYYY-MM-DD)") { |v| @options[:schedule_date] = v }
+      opts.on("-j", "--json FILE", "Path to JSON file containing workoutSegments payload") { |v| @options[:json_payload] = v }
+    end.parse!(@args)
+
+    unless @options[:json_payload] && File.exist?(@options[:json_payload])
+      puts "ERRO: O arquivo JSON do payload é obrigatório."
+      exit 1
+    end
+  end
+
+  def create_custom_workout
+    client = get_client
+    
+    begin
+      payload_content = File.read(@options[:json_payload])
+      workout_segments = JSON.parse(payload_content)
+    rescue => e
+      puts "Erro ao ler ou parsear o arquivo JSON: #{e.message}"
+      exit 1
+    end
+
+    workout_payload = {
+      "workoutName" => @options[:name],
+      "sportType" => { "sportTypeId" => 1, "sportTypeKey" => "running", "displayOrder" => 1 },
+      "poolLength" => nil,
+      "poolLengthUnit" => nil,
+      "description" => nil,
+      "workoutSegments" => workout_segments
+    }
+
+    puts "📡 Enviando treino customizado para o Garmin Connect..."
+    begin
+      res = client.connection.post("/workout-service/workout", body: workout_payload)
+      if res && res["workoutId"]
+        workout_id = res["workoutId"]
+        puts "✅ Treino criado com sucesso no Garmin Connect!"
+        puts "🔗 https://connect.garmin.com/modern/workout/#{workout_id}"
+        
+        puts "📅 Agendando para #{@options[:schedule_date]}..."
+        begin
+          client.connection.post("/workout-service/schedule/#{workout_id}", body: { date: @options[:schedule_date] })
+          puts "⌚ Agendado! Deve sincronizar para o relógio em breve."
+        rescue => e
+          puts "⚠️ Falha ao agendar automaticamente: #{e.message}"
+        end
+      else
+        puts "Falha inesperada ao criar o treino: #{res.inspect}"
+      end
+    rescue => e
+      puts "Erro na API: #{e.message}"
+      exit 1
+    end
+  end
+
   def print_usage
     puts "Garmin CLI v2.0 (Unified Ruby)"
     puts "Usage: garmin_cli.rb <command> [options]"
@@ -750,12 +821,14 @@ end
     puts "  weight          Busca resumo do peso mensal"
     puts "  resync-weight   Ressincroniza as pesagens p/ atualizar o perfil"
     puts "  workout         Gera e envia treino pro Garmin Connect"
+    puts "  custom-workout  Gera um treino customizado via payload JSON"
     puts ""
     puts "Examples:"
     puts "  garmin_cli.rb export --start 2023-01-01 --outdir ."
     puts "  garmin_cli.rb weight --months 12"
     puts "  garmin_cli.rb resync-weight --start 2020-01-01 --dry-run"
     puts "  garmin_cli.rb workout -n '5x1k' -w 10 -c 5 -d 1.0 -p 4:30 -r 2 -l 10 -s 2026-04-02"
+    puts "  garmin_cli.rb custom-workout -n 'Treino de 60min' -j payload.json -s 2026-04-04"
   end
 end
 

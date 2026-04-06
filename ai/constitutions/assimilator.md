@@ -102,6 +102,11 @@ A single bank can have multiple accounts (e.g., XP has 3 distinct accounts below
     1. **Rule engine** (high confidence): exact merchant match, recipient mapping, regex patterns → auto-categorized, no review needed
     2. **LLM** (medium-high confidence): transaction description + amount + context sent to LLM for category inference. Can run via MCP (Nexus categorizes) or local API call. Falls back to review queue if below threshold.
     3. **Human review queue** (below threshold): dedicated UI showing the LLM's suggestion + confidence score. User confirms or reassigns. Every correction feeds back into the rule engine (creates a new rule) and improves future LLM prompts via few-shot examples.
+  - **Reconciliation & Data Quality Rules (Learned from 2025 Audit)**:
+    - **OFX Twins / Duplications**: Installment transactions often import twice with slight text variations (e.g., `(1/3)` vs `(1 de 3)`). One version must be categorized as `Mov. Financeiras / Estorno` (or permanently deleted) to prevent double-counting in expense aggregates.
+    - **PIX Mis-categorization**: PIX transfers default to `Mov. Financeiras / Transf. Interna` (which is typically excluded from expense tracking). To capture real expenses paid via PIX (e.g., cleaner, vet, butcher, personal trainer), strict text-matching rules (e.g., "Rozimilda" → "Moradia/Limpeza") must be actively maintained.
+    - **Cross-Account Awareness**: Certain structural expenses (like Financiamento or Plano de Saúde) may be paid from personal accounts (e.g., Itaú) rather than joint accounts (e.g., XP Visa). Reconciliation must account for these expected "missing" amounts in joint-account filters.
+    - **Generic Vendor Risk**: Broad auto-rules for marketplaces (e.g., `AMAZON BR`, `MERCADOLIVRE`) are dangerous because they mix regular household goods (`Produtos Casa`), structural items (`Ap. Novo`), and supplements (`Saúde / Suplementos`). Rules must target specific seller strings (e.g., `AMAZONMKTPLC*DUXCOMPAN` → Suplementos) instead of the generic platform name.
 - **Budget tracking** per category per month
   - Separate budgets: joint vs personal
   - Visual indicators: on-track, warning (>80%), over-budget
