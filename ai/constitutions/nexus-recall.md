@@ -256,6 +256,19 @@ Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 4. **Tag** (`tagging.py`): LLM-based classification (Domain, Frequency, Orthogonal). Uses messages and metadata to build rich search facets.
 5. **Vectorize** (`retrieval/vector.py`): Generates embeddings via OpenAI/Gemini for semantic search.
 
+### WhatsApp Live Transport
+- Live WhatsApp transport is now split from historical export ingest.
+- The live path depends on the external `wacli` service in `~/projects/wacli-service/`, reached over HTTP rather than shelling out to a local subprocess.
+- Durable live state is tracked through `raw_message_log`, `ingest_cursor`, `pending_chat_trigger`, `chat_progress_cursor`, and `whatsapp_distillation_batch`.
+- Accepted steady-state topology is `wacli` plus Baileys coexistence. Do not model current work as a required migration to single transport.
+- Key routes for this path are:
+  - `POST /admin/whatsapp/pre-seed`
+  - `POST /admin/whatsapp/catch-up`
+  - `POST /ingest/whatsapp-events`
+  - `GET /context/whatsapp/{chat_id}/state`
+  - `POST /admin/whatsapp/distill`
+  - `GET /admin/whatsapp/migration-status`
+
 ### Search & Retrieval
 - **Intent-Aware Retrieval:** The system detects if the query is about a person or a general topic and balances the source distribution (WhatsApp vs. Documents vs. AI Chats) accordingly.
 - **Hybrid Search:** Combines BM25 (SQLite FTS5) with Vector Search (FAISS).
