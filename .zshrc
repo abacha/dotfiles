@@ -98,16 +98,17 @@ notes() {
 # OpenClaw Completion
 [[ -f /home/abacha/.openclaw/completions/openclaw.zsh ]] && source /home/abacha/.openclaw/completions/openclaw.zsh
 
-# >>> Hubstaff SRE Toolkit >>>
+# >>> Hubstaff >>>
 export PATH="/home/abacha/.sre-toolkit/bin:$PATH"
-# <<< Hubstaff SRE Toolkit <<<
+alias hs-start="hs-local services start --exclude clickhouse && hs-local account start && sleep 5 && hs-local server start"
+# <<< Hubstaff <<<
 
 # Codex Auth Rotation
-alias codex-hs="cp ~/.codex/auth-hs.json ~/.codex/auth.json && echo 'Codex switched to Hubstaff (hs)'"
-alias codex-personal="cp ~/.codex/auth-personal.json ~/.codex/auth.json && echo 'Codex switched to Personal'"
+alias codex-hs="~/dotfiles/ai/tooling/codex-switch.sh hs"
+alias codex-personal="~/dotfiles/ai/tooling/codex-switch.sh personal"
 export EDITOR="vim"
 
 # Claude Auth Rotation
-alias claude-hs="cp ~/.claude/.credentials-hs.json ~/.claude/.credentials.json && echo 'Claude switched to Hubstaff (hs)'"
-alias claude-personal="cp ~/.claude/.credentials-personal.json ~/.claude/.credentials.json && echo 'Claude switched to Personal'"
+alias claude-hs="~/dotfiles/ai/tooling/claude-switch.sh hs"
+alias claude-personal="~/dotfiles/ai/tooling/claude-switch.sh personal"
 

@@ -12,7 +12,9 @@ export MANPAGER=most
 export BROWSER=wslview
 
 if [ -f "$HOME/.env" ]; then
+  set -a
   source "$HOME/.env"
+  set +a
 fi
 
 if [ -f '/opt/google-cloud-sdk/path.zsh.inc' ]; then
