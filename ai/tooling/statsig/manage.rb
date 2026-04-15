@@ -35,7 +35,7 @@ class StatsigManager
     case @options[:command]
     when 'list'
       list_entities
-    when 'get'
+    when 'get', 'read'
       get_entity
     when 'create'
       create_entity
@@ -79,6 +79,12 @@ class StatsigManager
       
       count = 0
       items.each do |item|
+        # Filter if search query is provided
+        if @options[:search]
+          next unless item['id'].to_s.downcase.include?(@options[:search].downcase) || 
+                      item['name'].to_s.downcase.include?(@options[:search].downcase)
+        end
+
         status = item['isEnabled'] ? 'Enabled' : 'Disabled'
         created = item['createdTime'] ? Time.at(item['createdTime'] / 1000).strftime('%Y-%m-%d') : 'Unknown'
         puts "- [#{item['id']}] #{item['name']} (#{status}) - Created: #{created}"
@@ -118,6 +124,8 @@ class StatsigManager
       status: @options[:status] || 'setup'
     }
 
+    payload[:layerID] = @options[:layer_id] if @options[:layer_id]
+
     if type == 'experiment'
       payload[:type] = 'experiment'
     end
@@ -126,7 +134,7 @@ class StatsigManager
 
     response = request(:post, endpoint, payload)
     
-    if response['message']
+    if response['message'] && !response['data']
       puts "Error creating #{type}: #{response['message']}"
       if response['errors']
         puts "Details: #{JSON.pretty_generate(response['errors'])}"
@@ -143,24 +151,54 @@ class StatsigManager
     id = @options[:id]
     type = @options[:type]
     payload_json = @options[:payload]
+    add_param_json = @options[:add_param]
 
-    unless payload_json
-      puts "Error: --payload JSON is required for update."
-      exit 1
-    end
-
-    begin
-      payload = JSON.parse(payload_json)
-    rescue JSON::ParserError
-      puts "Error: Invalid JSON payload."
+    unless payload_json || add_param_json
+      puts "Error: --payload JSON or --add-param JSON is required for update."
       exit 1
     end
 
     endpoint = "#{entity_endpoint(type)}/#{id}"
 
+    if add_param_json
+      begin
+        new_param = JSON.parse(add_param_json)
+      rescue JSON::ParserError
+        puts "Error: Invalid JSON for add_param."
+        exit 1
+      end
+
+      # Fetch existing entity
+      existing = request(:get, endpoint)
+      unless existing['data']
+        puts "Error fetching entity for merge: #{existing['message']}"
+        exit 1
+      end
+      
+      existing_data = existing['data']
+      current_params = existing_data['parameters'] || []
+      
+      # Replace or append param
+      idx = current_params.find_index { |p| p['name'] == new_param['name'] }
+      if idx
+        current_params[idx] = new_param
+      else
+        current_params << new_param
+      end
+
+      payload = { "parameters" => current_params }
+    else
+      begin
+        payload = JSON.parse(payload_json)
+      rescue JSON::ParserError
+        puts "Error: Invalid JSON payload."
+        exit 1
+      end
+    end
+
     response = request(:patch, endpoint, payload)
     
-    if response['message']
+    if response['message'] && !response['data']
       puts "Error updating #{type}: #{response['message']}"
       if response['errors']
         puts "Details: #{JSON.pretty_generate(response['errors'])}"
@@ -326,8 +364,11 @@ OptionParser.new do |opts|
 
   opts.on("-d", "--description DESC", "Description for creation") { |v| options[:description] = v }
   opts.on("-k", "--key KEY", "Console API Key") { |v| options[:console_key] = v }
+  opts.on("-s", "--search QUERY", "Search/filter list results") { |v| options[:search] = v }
+  opts.on("-a", "--add-param JSON", "Safe merge: Add or update a parameter without overwriting others (Layers only)") { |v| options[:add_param] = v }
   opts.on("-p", "--payload JSON", "JSON Payload for update") { |v| options[:payload] = v }
   opts.on("-f", "--from SOURCE", "Source entity ID for clone") { |v| options[:from] = v }
+  opts.on("-l", "--layer LAYER_ID", "Layer ID to attach experiment to") { |v| options[:layer_id] = v }
   opts.on("--id-type TYPE", "Unit ID type (userID/organizationID)") { |v| options[:id_type] = v }
   opts.on("--tags TAGS", "Comma-separated tags to apply") { |v| options[:tags] = v.split(',').map(&:strip) }
   opts.on("--status STATUS", "Set status when creating/cloning (default: setup)") { |v| options[:status] = v }

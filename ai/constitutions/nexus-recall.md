@@ -31,44 +31,51 @@ Runtime: Docker Compose. Single container, single user, single SQLite database.
 
 ```
 backend/src/app/
-├── routers/          ← Thin HTTP layer. Parse request, call service, return response.
-│     chat.py, search.py, conversations.py, messages.py, ingest.py,
-│     memories.py, local_sources.py, artifacts.py, people.py,
-│     admin.py, assets.py, context.py, settings_router.py, config.py
+├── aichat/           ← Interactive chat domain: chat, conversations, search, artifacts, settings, ingest.
+│     router_*.py, service.py, conversations.py, messages.py, search.py,
+│     queries_*.py, artifacts/, ingest/, models/, tools/, resources/config.yaml
 │
-├── services/         ← Business logic. Receives sqlite3.Connection, raises domain errors.
-│     chat_service.py, search_service.py, conversation_service.py,
-│     ingest_service.py, memory_service.py, lock_service.py,
-│     source_service.py, admin_service.py, observability_service.py,
-│     people_service.py, job_service.py, artifact_service.py,
-│     group_service.py, message_service.py, settings_service.py
+├── whatsapp/         ← WhatsApp transport + profiling domain: export ingest, live events, chat state, groups, people.
+│     router.py, service.py, realtime.py, distillation.py, tasks.py,
+│     queries.py, queries_groups.py, ingest/, people/, models/, resources/config.yaml
 │
-├── retrieval/        ← Search pipeline: hybrid merge, vector, lexical, rerank, context building.
-├── ingest/           ← Parsers (chatgpt, openclaw, whatsapp), chunking, tagging, cleaning.
-├── llm/providers/    ← LLM abstraction: base class, registry, per-provider implementations.
-├── models/           ← Pydantic request/response schemas.
-├── util/             ← Shared helpers (sanitize, tokens, ids, text, config_loader).
-├── queries/          ← SQL queries by domain (parameterized, never string-interpolated).
+├── documents/        ← Document ingest + deferred formatting domain.
+│     router.py, service.py, pipeline.py, jobs.py, queries.py,
+│     ingest/, models/, resources/config.yaml
 │
-├── main.py           ← App factory only (~100 lines): create app, mount middleware, include routers.
-├── document_generation.py  ← LLM-powered document formatting (Phase 2).
-├── image_generation.py     ← DALL-E/Gemini-Image integration helper.
-├── dependencies.py   ← FastAPI dependencies: get_conn, write_lock, auth, get_provider.
-├── errors.py         ← Domain exceptions: AppError, NotFoundError, ConflictError, etc.
-├── schema.sql        ← SQLite DDL (source of truth for table definitions).
-├── migrations.py     ← Incremental schema migrations.
-├── settings.py       ← Pydantic BaseSettings, env-based configuration.
-└── db.py             ← Connection factory, WAL mode, foreign keys.
+├── admin/            ← Operations/admin surface: health, jobs, evidence, assets, runtime config.
+│     router.py, router_assets.py, router_config.py, router_evidence.py,
+│     router_memories.py, service.py, queries_*.py
+│
+├── foundation/       ← Pure infrastructure: no business logic, used by all packages.
+│     db.py, settings.py, errors.py, dependencies.py, rate_limit.py,
+│     migrations.py, backup.py, models/common.py, util/
+│
+├── kernel/           ← Shared domain logic used by multiple feature packages.
+│     cleaner.py, memory_policy.py, memory_lifecycle.py,
+│     router_ingest.py, router_memories.py, queries_ingest.py,
+│     chunks/, evidence/, ingest/, jobs/, llm/, memories/, models/admin.py,
+│     observability/, projects/, retrieval/, tags/, resources/
+│
+├── mcp/              ← MCP server entrypoints and tool wrappers.
+│
+├── main.py           ← FastAPI app assembly: middleware, exception mapping, router inclusion.
+├── lifespan.py       ← Startup reconciliation, FAISS consistency, scheduled backups, WhatsApp polling.
+├── middleware.py     ← Request logging + HTTP hardening middleware.
+├── schema.sql        ← SQLite DDL source of truth.
+└── observability.py  ← Legacy top-level observability helpers; prefer `kernel/observability/`.
 ```
 
 ### Layer Rules
 
-1. **Routers** never contain business logic. They validate input, call a service method, and return the result. They do not catch domain exceptions — the global handler does.
-2. **Services** never import FastAPI or raise `HTTPException`. They raise domain exceptions from `errors.py` and call `conn.commit()` after mutations.
-3. **Services** receive a `sqlite3.Connection` as their first argument (called via `get_conn()` in the router, closed in a `finally` block).
-4. **SQL** lives in `queries/<domain>.py` as plain functions. Services never call `conn.execute()` directly. Queries raise domain exceptions (never `ValueError` or `Exception`).
-5. **No circular imports.** Dependency direction: `routers → services → queries/retrieval/ingest/llm → util`. Never backwards.
-6. Global `AppError` handler in `main.py` maps domain exceptions to HTTP responses:
+1. **Feature packages own their HTTP surface.** Routers live next to the domain they serve (`aichat/router_*.py`, `whatsapp/router.py`, `documents/router.py`, `admin/router*.py`, `kernel/projects/router.py`). There is no central `routers/` package anymore.
+2. **Routers stay thin.** They parse request state, open a DB connection through `foundation.dependencies.get_conn()`, call domain services, and return serialized results. They should not carry business logic.
+3. **Service/orchestration modules receive `sqlite3.Connection` first.** This applies to domain services like `aichat/service.py`, `documents/service.py`, `whatsapp/service.py`, `kernel/memories/service.py`, and `kernel/projects/service.py`.
+4. **Services never depend on FastAPI response semantics.** Prefer raising domain errors from `foundation/errors.py`. `HTTPException` is only acceptable in router-layer validation or when translating a genuinely HTTP-specific concern.
+5. **SQL lives in domain query modules.** Use `queries.py`, `queries_<domain>.py`, or package-level query modules beside the feature they support. Do not reintroduce a shared catch-all `queries/` directory.
+6. **Pure infrastructure (database, configuration, exceptions, dependency injection, utilities) belongs in `foundation/`.** Shared business logic and domain features used by multiple packages belong in `kernel/`. New auth middleware → `foundation/`. New shared LLM feature → `kernel/`.
+7. **Dependency direction is package-first.** `main.py` / `lifespan.py` wire the app, routers depend on same-package services plus `foundation`/`kernel`, query modules stay low-level, and cross-feature imports should be rare and explicit. Avoid recreating the old flat-layer import graph.
+8. Global `AppError` handler in `main.py` maps domain exceptions to HTTP responses:
    - `NotFoundError` → 404
    - `ForbiddenError` → 403
    - `ConflictError` → 409
@@ -87,10 +94,10 @@ backend/src/app/
 - No docstrings on obvious functions. Add docstrings only where the *why* isn't clear from the name + types.
 
 ### Naming
-- Files: `snake_case.py`. Routers named by domain (`chat.py` not `chat_router.py`).
+- Files: `snake_case.py`. Router files use the current package conventions: `router.py` or `router_<capability>.py`.
 - Functions: `snake_case`. Private helpers prefixed with `_`.
 - Classes: `PascalCase`. Services are plain functions/modules, not singletons.
-- Constants: `UPPER_SNAKE_CASE`. Magic numbers go in `settings.py`.
+- Constants: `UPPER_SNAKE_CASE`. Magic numbers go in `kernel/settings.py`.
 
 ### Error Handling
 - Services raise domain exceptions (`NotFoundError`, `ForbiddenError`, `ConflictError`, `ValidationError`, `CapExceededError`, `ProviderError`).
@@ -122,7 +129,7 @@ backend/src/app/
 
 ### Standards
 - Framework: pytest + pytest-asyncio + httpx (AsyncClient).
-- Coverage target: 100% on services/utilities, ≥90% overall.
+- Coverage target: 100% on service/orchestration and utility modules, ≥90% overall.
 - Every service method has at least one unit test. Every endpoint has at least one integration test.
 
 ### File Naming
@@ -163,9 +170,9 @@ backend/src/app/
 5. Keep changes scoped; avoid mixing unrelated backend + UI refactors in one pass.
 
 ## Backend & Configuration Guardrails
-- **Config over Hardcode:** Never hardcode prompts, keyword lists, or project domains in Python. Use `backend/src/app/resources/system_config.yaml`.
-- **All LLM prompts must live in `system_config.yaml` under the `prompts:` key.** Load them via `get_prompt("prompt_name")` from `util/config_loader.py`. Never define prompt strings inline in Python source files.
-- **Pre-Storage Cleaning:** All message content must be sanitized via `cleaner.py` before being saved to the database.
+- **Config over Hardcode:** Never hardcode prompts, keyword lists, or taxonomy vocabulary in Python. Resource YAML now lives under package-local `resources/` directories (`aichat/resources/config.yaml`, `documents/resources/config.yaml`, `whatsapp/resources/config.yaml`, `kernel/resources/taxonomy.yaml`) and is merged through the shared loader. Projects are managed via the DB (`/projects` CRUD).
+- **All LLM prompts must live under the `prompts:` key in a resource YAML.** Load them via `get_prompt("prompt_name")` from `kernel/util/config_loader.py`. Never define prompt strings inline in Python source files.
+- **Pre-Storage Cleaning:** All message content must be sanitized via `kernel/cleaner.py` before being saved to the database.
 - **Selective Ingestion:** Avoid importing technical noise (e.g., `tool` role messages) that degrades the memory history.
 
 ## API Change Guardrails
@@ -201,8 +208,7 @@ backend/src/app/
 cd backend && uv run pytest tests/ -v
 cd backend && uv run pytest tests/ --cov=app --cov-report=term-missing
 ```
-Coverage requirements: 100% on services/utilities, ≥90% overall. Never merge a PR that drops coverage below baseline.
-
+Coverage requirements: 100% on service/orchestration and utility modules, ≥90% overall. Never merge a PR that drops coverage below baseline.
 **Web (when UI changes):**
 ```bash
 cd web && npm run lint
@@ -250,11 +256,11 @@ docker compose exec api python -c "import urllib.request; print(urllib.request.u
 ### Ingestion Pipeline
 Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 
-1. **Ingest** (`parse_export.py`): Supports `.zip` (ChatGPT Export), raw `.json`, WhatsApp `.txt`, and Documents (PDF, MD, DOCX, etc). Standardizes roles (`user`, `assistant`, `system`). `tool` role messages are ignored.
-2. **Clean** (`cleaner.py`): Every message/chunk passes through the cleaner before being saved. Strips technical JSON, voice metadata, and custom tokens.
-3. **Format (Deferred)** (`document_generation.py`): Uploaded documents are first ingested as raw text. A background job then uses the LLM to format the text into clean Markdown (fixing headers, tables, etc.) for better retrieval quality.
-4. **Tag** (`tagging.py`): LLM-based classification (Domain, Frequency, Orthogonal). Uses messages and metadata to build rich search facets.
-5. **Vectorize** (`retrieval/vector.py`): Generates embeddings via OpenAI/Gemini for semantic search.
+1. **Ingest** (`aichat/ingest/`, `whatsapp/ingest/`, `documents/ingest/`): Supports `.zip` (ChatGPT Export), raw `.json`, WhatsApp `.txt`, live WhatsApp transport events, OpenClaw sessions, and Documents (PDF, MD, DOCX, etc). Standardizes roles (`user`, `assistant`, `system`). `tool` role messages are ignored.
+2. **Clean** (`kernel/cleaner.py`): Every message/chunk passes through the cleaner before being saved. Strips technical JSON, voice metadata, and custom tokens.
+3. **Format (Deferred)** (`documents/ingest/` + `documents/jobs.py`): Uploaded documents are first ingested as raw text. A background job then uses the LLM to format the text into clean Markdown (fixing headers, tables, etc.) for better retrieval quality.
+4. **Tag** (`kernel/tags/classifier.py`): LLM-based classification producing `continuity` (one-off/long-running/recurring), open-ended `topics`, and validated `signals` (planning/review/debugging…). Taxonomy vocabulary is defined in `kernel/resources/taxonomy.yaml`. Project assignment is separate and DB-validated.
+5. **Vectorize** (`kernel/retrieval/vector.py`): Generates embeddings via OpenAI/Gemini for semantic search.
 
 ### WhatsApp Live Transport
 - Live WhatsApp transport is now split from historical export ingest.
@@ -262,12 +268,12 @@ Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 - Durable live state is tracked through `raw_message_log`, `ingest_cursor`, `pending_chat_trigger`, `chat_progress_cursor`, and `whatsapp_distillation_batch`.
 - Accepted steady-state topology is `wacli` plus Baileys coexistence. Do not model current work as a required migration to single transport.
 - Key routes for this path are:
-  - `POST /admin/whatsapp/pre-seed`
-  - `POST /admin/whatsapp/catch-up`
-  - `POST /ingest/whatsapp-events`
-  - `GET /context/whatsapp/{chat_id}/state`
-  - `POST /admin/whatsapp/distill`
-  - `GET /admin/whatsapp/migration-status`
+  - `POST /whatsapp/admin/pre-seed`
+  - `POST /whatsapp/admin/catch-up`
+  - `POST /whatsapp/ingest/whatsapp-events`
+  - `GET /whatsapp/context/{chat_id}/state`
+  - `POST /whatsapp/admin/distill`
+  - `GET /whatsapp/admin/migration-status`
 
 ### Search & Retrieval
 - **Intent-Aware Retrieval:** The system detects if the query is about a person or a general topic and balances the source distribution (WhatsApp vs. Documents vs. AI Chats) accordingly.

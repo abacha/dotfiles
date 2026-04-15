@@ -1,4 +1,20 @@
 require('nvim-tree').setup{
+  filters = {
+    dotfiles = false,
+    custom = {
+      "^\\.git$",
+      "^\\.mypy_cache$",
+      "^\\.ruff_cache$",
+      "^\\.pytest_cache$",
+      "^__pycache__$",
+      "^\\.venv$",
+      "^venv$",
+      "^\\.env$",
+      "^node_modules$",
+      "\\.pyc$",
+      "^__init__\\.py$",
+    },
+  },
   renderer = {
     icons = {
       show = {

@@ -4,9 +4,21 @@ This is a simple wrapper around the Statsig console APIs. Use `manage.rb` for li
 
 ## Common flows
 
-- **List experiments**
+- **List and search experiments/layers**
   ```bash
   ./manage.rb list experiment
+  ./manage.rb list layer -s "getting"
+  ```
+
+- **Read an entity details**
+  ```bash
+  ./manage.rb read layer getting-started
+  ```
+
+- **Update a layer parameter safely (Merge / Add)**
+  Instead of sending the full payload which overwrites all existing parameters, use `--add-param` to append or update a single parameter in a Layer.
+  ```bash
+  ./manage.rb update layer getting-started --add-param '{"name": "show_icons", "type": "boolean", "defaultValue": false}'
   ```
 
 - **Copy an existing experiment** (e.g., to change `idType` or target criteria)

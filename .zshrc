@@ -112,3 +112,5 @@ export EDITOR="vim"
 alias claude-hs="~/dotfiles/ai/tooling/claude-switch.sh hs"
 alias claude-personal="~/dotfiles/ai/tooling/claude-switch.sh personal"
 
+# Use containerised wacli
+alias wacli="docker exec -i nexus-recall-wacli-1 wacli"
