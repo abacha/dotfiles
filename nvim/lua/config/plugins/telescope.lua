@@ -5,6 +5,12 @@ local actions = require('telescope.actions')
 -- Plugin setup
 telescope.setup {
   defaults = {
+    file_ignore_patterns = { 
+      "%.jpg", "%.jpeg", "%.png", "%.gif", "%.webp", 
+      "%.mp4", "%.mkv", "%.avi", "%.ogg",
+      "%.pdf", "%.zip", "%.tar", "%.gz", "%.rar",
+      "%.xlsx", "%.xls", "%.doc", "%.docx"
+    },
     path_display = { "truncate" },
     hidden = true,
     mappings = {
