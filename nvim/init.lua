@@ -13,6 +13,7 @@ require("config.plugins.lualine")                 -- Lualine configuration
 require("config.plugins.gitsigns")                -- Gitsigns configuration
 require("config.plugins.lsp")                   -- LSP configuration
 require("config.plugins.vim-test")              -- vim-test configuration
+require("config.plugins.octo")                  -- Octo (GitHub PRs/Issues)
 require("config.colorscheme")
 
 -- Core Neovim settings
