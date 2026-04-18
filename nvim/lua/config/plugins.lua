@@ -12,6 +12,7 @@ return require('packer').startup(function(use)
   use 'tpope/vim-endwise'
   use 'tpope/vim-fugitive'
   use 'tpope/vim-eunuch'
+  use 'christoomey/vim-tmux-navigator'
   use 'roxma/vim-tmux-clipboard'
   use 'nvim-tree/nvim-tree.lua'
 
@@ -35,9 +36,34 @@ return require('packer').startup(function(use)
   use 'vim-test/vim-test'
   use 'tpope/vim-dispatch'
 
+  -- GitHub
+  use {
+    'pwntester/octo.nvim',
+    requires = {
+      'nvim-lua/plenary.nvim',
+      'nvim-telescope/telescope.nvim',
+      'nvim-tree/nvim-web-devicons',
+    }
+  }
+
   -- Copilot and AI
   use 'zbirenbaum/copilot.lua'
   use 'CopilotC-Nvim/CopilotChat.nvim'
+
+  -- Obsidian
+  use {
+    "epwalsh/obsidian.nvim",
+    config = function()
+      require("obsidian").setup({
+        workspaces = {
+          {
+            name = "vault",
+            path = "~/vault",
+          },
+        },
+      })
+    end,
+  }
 
   -- Completion
   use 'hrsh7th/nvim-cmp'

@@ -21,6 +21,7 @@ map("n", "<F3>", ":tabprevious<CR>")                -- Go to previous tab
 map("n", "<F4>", ":tabnext<CR>")                    -- Go to next tab
 map("v", "<C-y>", '"+y')                            -- Yank to system clipboard in visual mode
 map("n", "<leader>gc", ":CopilotChat<CR>")          -- Open Copilot Chat
+map("n", "<leader>o", ":ObsidianSearch<CR>")        -- Open Obsidian Search
 map("c", "%%", [[<C-R>=expand("%:h")."/"<CR>]])     -- Insert current file's directory in command mode
 map("c", "%f", [[<C-R>=expand("%")<CR>]])           -- Insert current file's name in command mode
 map("n", "<leader><leader>", "^")                   -- Jump to first non-blank character

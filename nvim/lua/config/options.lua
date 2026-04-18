@@ -49,5 +49,10 @@ vim.opt.shiftwidth = 2
 vim.opt.smarttab = true
 vim.opt.formatprg = "par -TbgqRw80"
 vim.opt.list = false
+vim.opt.conceallevel = 2
 
-
+-- Qualtiy of life tweaks
+vim.opt.undofile = true        -- Persistent undo
+vim.opt.updatetime = 250       -- Faster UI updates (Gitsigns/LSP)
+vim.opt.signcolumn = "yes"     -- Prevent text shifting when signs appear
+vim.opt.termguicolors = true   -- True color support for themes

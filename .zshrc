@@ -23,7 +23,9 @@ alias upb='docker-compose up --build'
 alias dex='docker-compose exec $(basename "$PWD")'
 alias drun='docker-compose run $(basename "$PWD")'
 alias readmyenv="set -o allexport && source .env && set +o allexport"
+alias v="nvim"
 alias docker-compose='docker compose'
+alias clip="clip.exe"
 
 # Prefer Windows Chrome when running GUI actions from WSL
 if [[ -x /mnt/c/Windows/System32/cmd.exe ]]; then
@@ -76,8 +78,12 @@ fi
 # initialise completions with ZSH's compinit
 autoload -Uz compinit && compinit
 
-# Key Bindings
+# Vi Mode and Command Line Editing
+set -o vi
 bindkey -v
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^x^e' edit-command-line
 # bindkey '^r' history-incremental-search-backward
 
 # Notes Function
@@ -106,7 +112,7 @@ alias hs-start="hs-local services start --exclude clickhouse && hs-local account
 # Codex Auth Rotation
 alias codex-hs="~/dotfiles/ai/tooling/codex-switch.sh hs"
 alias codex-personal="~/dotfiles/ai/tooling/codex-switch.sh personal"
-export EDITOR="vim"
+export EDITOR="nvim"
 
 # Claude Auth Rotation
 alias claude-hs="~/dotfiles/ai/tooling/claude-switch.sh hs"
@@ -114,3 +120,6 @@ alias claude-personal="~/dotfiles/ai/tooling/claude-switch.sh personal"
 
 # Use containerised wacli
 alias wacli="docker exec -i nexus-recall-wacli-1 wacli"
+
+# zoxide init
+eval "$(zoxide init zsh)"
