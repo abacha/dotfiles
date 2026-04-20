@@ -20,6 +20,7 @@ Runtime: Docker Compose. Single container, single user, single SQLite database.
 | Run tests | `cd backend && uv run pytest tests/ -v` |
 | Run single test | `cd backend && uv run pytest tests/test_foo.py::test_bar -v` |
 | Run with coverage | `cd backend && uv run pytest --cov=app --cov-report=term-missing` |
+| Run eval harness | `cd backend && uv run eval-pipeline <chat.txt>` |
 | Lint | `cd backend && uv run ruff check src/ tests/` |
 | Type check | `cd backend && uv run mypy src/` |
 | Docker build+run | `docker compose up -d --build` |

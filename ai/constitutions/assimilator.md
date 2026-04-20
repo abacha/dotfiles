@@ -41,20 +41,17 @@ No permission system needed — simple user accounts with implicit full access t
 - **Transaction** — a debit, credit, or transfer
   - Linked to a Financial Account
   - Has: date, amount, description, category, subcategory, currency
-  - Source: `open_finance`, `import_csv`, `import_pdf`, `import_ofx`, `manual`
-  - `adb_capture` source is v3 scope — not implemented in v1
+  - Source: `open_finance`, `import_csv`, `import_pdf`, `import_ofx`, `manual`, `recurring_job`
 - **Category** — hierarchical (category → subcategory)
 - **Budget** — monthly limit per category, scoped to account group (joint vs personal)
+- **Recurring Transaction** — templates for recurring events
+  - Has frequency (`daily`, `weekly`, `monthly`, `yearly`), next_date, active flag
+  - Automatically generates `Transaction` records via background jobs
 - **Investment Position** — current holding in an asset
-  - Linked to a Brokerage Account
-  - Asset type: `stock_br`, `stock_us`, `fii`, `fixed_income`, `crypto`, `other`
-  - Tracks: quantity, average cost, current price, currency
 - **Investment Transaction** — buy, sell, dividend, yield, split, etc.
 - **Snapshot** — periodic portfolio valuation for historical evolution charts
 
 ### 4.2 Account Topology (Initial Setup)
-
-A single bank can have multiple accounts (e.g., XP has 3 distinct accounts below). The model supports N accounts per institution natively — `Financial Account` has a `bank`/`institution` field but identity is per-account, not per-bank.
 
 | Bank | Account Type | Owner | Tag | Currency |
 |------|-------------|-------|-----|----------|
@@ -72,223 +69,87 @@ A single bank can have multiple accounts (e.g., XP has 3 distinct accounts below
 - **Mother's portfolio** is fully isolated: separate dashboard, separate reports, never mixed into household totals.
 - **Joint account**: expenses and cash flow only (no investments). Tracked with full categorization; each user's contribution is recorded monthly; the "household share" concept shows what portion of expenses belongs to whom.
 
-### 4.4 Liabilities
+### 4.4 Virtual Clearing (Partida Dobrada) & Payroll Deductions
 
-- **Mortgage / Financing**: the couple has a joint apartment under financing. The system tracks:
-  - Outstanding balance (liability, reduces net worth)
-  - Monthly payment: linked via `Category#liability_id` — categories tagged to a liability auto-track regular and extra payments
-  - Amortization schedule: SAC (constant principal) or Price (French/constant payment); extra amortization payments recalculate the SAC installment (`new_balance / new_remaining`) and shorten the term — matching Brazilian bank behavior. `term_months` stores the **original contract term** (immutable); end date is computed dynamically so adding/deleting extra payments adjusts it automatically.
-  - **TBD: TR (Taxa Referencial) correction** — banks apply TR monthly to the balance (`balance *= 1 + TR_rate`). Calculator currently assumes TR = 0% (accurate since 2017). To implement: sync BCB série 226 via `api.bcb.gov.br`, store in a `TaxaReferencial` table, apply in `AmortizationSchedule#generate`. Low priority while TR ≈ 0%.
-  - Paid installment detection: parsed from transaction description (e.g., "000011", "016/132") — more reliable than date matching since payments may cross months
-  - Property valuation (optional, manual update) as an asset to offset the liability
-- Future-proof for other liabilities (car financing, loans) with same pattern.
+For structural expenses paid outside the primary cash flow (e.g., health insurance deducted directly from a spouse's payroll before the net salary hits the account), we use a "Virtual Clearing" mechanism via Recurring Transactions:
+- A monthly `RecurringTransaction` creates two opposing ledger entries on the exact same date.
+- **Entry A (The Expense):** `-R$ X` tagged as the actual expense (e.g., `Saúde / Plano de Saúde`).
+- **Entry B (The Revenue/Transfer):** `+R$ X` tagged as the funding source (e.g., `Mov. Financeiras / Transf. Interna` representing the spouse's extra contribution).
+- **Result:** The account's real cash balance remains 100% accurate (net zero impact), while the analytical dashboards correctly display the household's actual spending and income/contribution.
+
+### 4.5 Liabilities
+
+- **Mortgage / Financing**: tracks outstanding balance, monthly payment, and amortization schedule (SAC/Price).
+- Paid installment detection: parsed from transaction description (e.g., "000011", "016/132").
 
 ## 5. Functional Requirements
 
-### 5.1 Expense Management (Dashboard 1)
+### 5.1 Expense Management & Data Pipelines
 
-- **Transaction ingestion** from multiple sources (priority order):
-  1. Open Finance API (real-time sync)
-  2. CSV / OFX / PDF import (bank statements, credit card bills)
-  3. Manual entry
-  4. ADB screen capture fallback (for banks that don't integrate)
-  - **Credit Card Rule**: For credit card imports (CSVs or Open Finance), transactions must be billed to the month of the invoice, not the purchase date. If a transaction is an installment (e.g., "1/3" or "6/10" in the original source), its `date` in the system MUST reflect the invoice due date so it correctly impacts the cash flow of the month it was paid.
-- **Automatic categorization** using rules engine + ML fallback
-  - User can correct; corrections feed back into the model
-  - Pre-seeded with user's existing category tree (see §5.1.1)
-  - **Confidence threshold**: configurable (e.g., 0.8 default). Transactions below threshold land in a **review queue** — a dedicated UI where the user sees the suggestion, confirms or reassigns, and the feedback trains the model.
-  - **Smart heuristics**: recurring transfers to the same recipient suggest a fixed category (e.g., monthly transfer to "Maria" → "Moradia/Limpeza"); same merchant patterns cluster together; amount + day-of-month patterns detect subscriptions/recurring bills.
-  - **Three-tier categorization pipeline**:
-    1. **Rule engine** (high confidence): exact merchant match, recipient mapping, regex patterns → auto-categorized, no review needed
-    2. **LLM** (medium-high confidence): transaction description + amount + context sent to LLM for category inference. Can run via MCP (Nexus categorizes) or local API call. Falls back to review queue if below threshold.
-    3. **Human review queue** (below threshold): dedicated UI showing the LLM's suggestion + confidence score. User confirms or reassigns. Every correction feeds back into the rule engine (creates a new rule) and improves future LLM prompts via few-shot examples.
-  - **Reconciliation & Data Quality Rules (Learned from 2025 Audit)**:
-    - **OFX Twins / Duplications**: Installment transactions often import twice with slight text variations (e.g., `(1/3)` vs `(1 de 3)`). One version must be categorized as `Mov. Financeiras / Estorno` (or permanently deleted) to prevent double-counting in expense aggregates.
-    - **PIX Mis-categorization**: PIX transfers default to `Mov. Financeiras / Transf. Interna` (which is typically excluded from expense tracking). To capture real expenses paid via PIX (e.g., cleaner, vet, butcher, personal trainer), strict text-matching rules (e.g., "Rozimilda" → "Moradia/Limpeza") must be actively maintained.
-    - **Cross-Account Awareness**: Certain structural expenses (like Financiamento or Plano de Saúde) may be paid from personal accounts (e.g., Itaú) rather than joint accounts (e.g., XP Visa). Reconciliation must account for these expected "missing" amounts in joint-account filters.
-    - **Generic Vendor Risk**: Broad auto-rules for marketplaces (e.g., `AMAZON BR`, `MERCADOLIVRE`) are dangerous because they mix regular household goods (`Produtos Casa`), structural items (`Ap. Novo`), and supplements (`Saúde / Suplementos`). Rules must target specific seller strings (e.g., `AMAZONMKTPLC*DUXCOMPAN` → Suplementos) instead of the generic platform name.
-- **Budget tracking** per category per month
-  - Separate budgets: joint vs personal
-  - Visual indicators: on-track, warning (>80%), over-budget
-- **Monthly summary**: income vs expenses, savings rate, category breakdown
-- **Recurring transaction detection**: rent, subscriptions, utilities
+- **Transaction ingestion pipelines**:
+  1. **Open Finance API** (via Pluggy - syncs real-time via jobs).
+  2. **File Imports** (OFX/CSV) - handled asynchronously via `ImportBatch` and Solid Queue.
+  3. **Manual Entry & Recurring** - `ProcessRecurringTransactionsJob` generates expected transactions dynamically based on `next_date`.
+- **Categorization Engine**:
+  - **Rule engine**: exact merchant match, recipient mapping, regex patterns (runs immediately upon ingestion).
+  - **LLM**: used for ambiguous descriptions (fallback).
+  - **Human review queue**: transactions below the confidence threshold land here. Confirming them trains the rule engine.
+  - **Shadow Rules**: strict lock on `status: confirmed` to prevent auto-categorization from continuously rewriting manually fixed or virtual clearing transactions.
 
-#### 5.1.1 Initial Category Tree (Joint Account)
+### 5.2 File Parsers & Deduplication Strategy
 
-| Category | Subcategories |
-|----------|---------------|
-| Pet | Comida/Higiene, Veterinário, Roupas/Acessórios |
-| Alimentação | Restaurante *(Lanchonete merged in)*, Açougue, Feira/Mercado |
-| Moradia | Aluguel, Internet, Serviços, Luz, Gás, Condomínio, Limpeza, Jardineiro, Manutenção |
-| Transporte | Connect Car, Estacionamento, Uber, Carro |
-| Saúde | Personal, Plano de Saúde, Farmácia, Massagem |
-| Compras | Produtos Casa, Presentes |
-| Viagem | Passagem, Outros |
-| Lazer | Lazer |
-| 💸 Mov. Financeiras | Renda, IOF, Previdência, Serviços, Outros |
-
-Personal categories TBD (likely simpler: food, entertainment, tech, subscriptions, etc.)
-
-### 5.2 Investment Portfolio (Dashboard 2)
-
-- **Position tracking**: current holdings grouped by asset type
-- **Performance**: absolute return, % return, comparison vs benchmarks (CDI, IBOV, S&P500)
-- **Evolution chart**: net worth over time (built from snapshots)
-- **Multi-currency**: USD positions converted to BRL at current rate; option to view in original currency
-- **Tax helpers**: cost basis tracking for future IR calculations
-- **Dividend/yield tracking**: income from investments over time
-
-### 5.3 Consolidated Dashboard
-
-- **Net worth**: all personal + joint assets minus liabilities
-- **Monthly cash flow**: all income vs all expenses
-- **Savings rate**: (income - expenses) / income
-- **Asset allocation**: pie chart by type, currency, broker
-
-### 5.4 Mother's Portfolio (Isolated)
-
-- Separate dashboard, separate navigation section
-- Same investment tracking features (position, performance, evolution)
-- Report generation: exportable PDF/CSV for her records
-- No crossover with personal/joint data
-
-### 5.5 Data Import & Sync
-
-- **Open Finance**: OAuth2 flow, scheduled sync (configurable interval)
-- **CSV/PDF/OFX import**: upload via UI, parser per bank format
-- **Google Sheets import**: one-time migration tool for historical spreadsheet data ("Orçamento Casa")
-- **ADB capture**: structured screen scraping module as last resort
+Different file types require distinct ingestion logic to avoid data duplication and ensure chronological integrity.
+- **OFX (Gold Standard):** Uses the `FITID` field as an absolute deduplication key. Imports are completely idempotent. Re-importing overlapping OFX files will safely ignore existing entries.
+- **CSV (Nubank / XP):** Since CSVs lack guaranteed unique IDs, the parser generates a synthetic hash based on `date + amount + description`. 
+  - *XP CSV quirks:* Often has delayed settlement dates or generic descriptions. The import pipeline must carefully evaluate gap days (e.g., weekend rollovers). 
+  - *Credit Card Invoice gaps:* When importing CC invoices, overlapping dates are standard (e.g., Feb invoice covers Jan 25 - Feb 24, Mar invoice covers Feb 25 - Mar 24). The system groups these under `AccountPeriod` to reconcile statements vs continuous timelines, relying on the synthetic hashes to prevent double-charging.
 
 ## 6. Non-Functional Requirements
 
-- **Self-hosted**: Docker Compose, single `docker compose up` to run everything
-- **Bootstrap scripts**: `bin/setup` that handles DB creation, migrations, seed data, env setup
-- **No cloud dependencies**: all services run locally; external APIs (Open Finance, exchange rates) are optional enrichments, not hard requirements
-- **Cloud-ready**: stateless app layer, config via env vars, easy to migrate to VPS later
-- **Performance**: snappy for 1-3 concurrent users; no need for horizontal scaling
-- **Data safety**: Postgres with regular pg_dump; no encryption-at-rest required for MVP but schema should not prevent adding it later
+- **Self-hosted**: Docker Compose, local-first.
+- **Performance**: Solid Queue handles heavy lifting (importing 1000+ CSV lines, running LLM categorization, syncing OF).
+- **Data safety**: Postgres with regular pg_dump.
 
 ## 7. Tech Stack
 
-| Layer | Choice | Notes |
-|-------|--------|-------|
-| Backend | **Ruby on Rails 8** (full-stack, Hotwire — not API mode) | Familiar to user; rich ecosystem for financial libs |
-| Frontend | **Hotwire (Turbo + Stimulus)** | Rails-native, clean, minimal JS; responsive/PWA-ready |
-| Database | **PostgreSQL 16** | JSONB for flexible metadata, strong decimal/money support |
-| Background Jobs | **Solid Queue** | Rails 8 default, no Redis dependency |
-| Caching | **Solid Cache** | Rails 8 default, DB-backed |
-| Containerization | **Docker Compose** | App + Postgres + (optional) worker |
-| CSS | **Tailwind CSS** | Utility-first, clean, good for dashboards |
-| Charts | **Chart.js** or **ApexCharts** via Stimulus | Lightweight, no heavy JS framework needed |
-| Exchange Rates | **Open Exchange Rates** or **ECB** (free) | Scheduled daily fetch, cached locally |
-| Categorization | **Rule engine → LLM → human review** | Three-tier pipeline (see §5.1) |
-
-### MCP Layer (Model Context Protocol)
-
-Assimilator exposes an MCP server so AI assistants (OpenClaw, Claude, etc.) can interact with financial data programmatically.
-
-**MCP Tools (implemented):**
-- `accounts.list` — list all financial accounts
-- `transactions.search` — search/filter transactions by date, category, amount, account
-- `transactions.create` — add a transaction manually
-- `transactions.categorize` — categorize a transaction
-- `budget.status` — current month budget vs actual per category
-- `import.csv` — trigger a CSV import from a file path
-- `reports.monthly` — generate a monthly expense report
-
-**MCP Resources (read-only context):**
-- `households` — household info
-- `categories` — category tree
-- `rules` — active categorization rules
-
-**v2 MCP tools (planned):**
-- `portfolio.summary` — investment positions, net worth, allocation
-- `portfolio.performance` — returns vs benchmarks
-- `reports.mother` — mother's portfolio report
-
-Implementation: lightweight Ruby MCP server (JSON-RPC 2.0 over stdio) that reuses Rails models/services. Packaged as a separate entrypoint in the same Docker image (`bin/mcp`). OpenClaw integration via mcporter pending.
-
-### Why Hotwire over React/Svelte?
-
-- Keeps the stack pure Ruby/Rails — no separate frontend build, no TypeScript, no node_modules
-- Turbo Frames + Streams handle the interactivity needed (live updates, inline edits, modals)
-- Stimulus controllers stay small and readable
-- PWA installable via standard Rails manifest
-- If heavy interactivity is needed later for specific views (complex charts, drag-and-drop), a Stimulus wrapper around a JS charting lib handles it fine
+- **Backend**: Ruby on Rails 8 (Hotwire, Turbo, Stimulus)
+- **Database**: PostgreSQL 16 (JSONB for metadata)
+- **Background Jobs**: Solid Queue & Solid Cache
+- **CSS**: Tailwind CSS
+- **MCP Layer**: Exposes `accounts.list`, `transactions.search`, `transactions.create`, `budget.status`, etc., to OpenClaw.
 
 ## 8. Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│              Docker Compose             │
-│                                         │
-│  ┌──────────┐  ┌──────────┐            │
-│  │  Rails    │  │ Postgres │            │
-│  │  App      │──│   16     │            │
-│  │  (Puma)   │  └──────────┘            │
-│  │           │                          │
-│  │  Solid    │  ┌──────────────────┐    │
-│  │  Queue    │  │ Open Finance     │    │
-│  │  (worker) │──│ Sync Worker      │    │
-│  └──────────┘  └──────────────────┘    │
-│                                         │
-└─────────────────────────────────────────┘
-         │
-         ▼ PWA (Hotwire)
-    ┌──────────┐
-    │ Browser  │
-    │ (mobile/ │
-    │ desktop) │
-    └──────────┘
+┌──────────────────────────────────────────────┐
+│                Docker Compose                │
+│                                              │
+│  ┌──────────┐  ┌──────────┐                 │
+│  │  Rails   │  │ Postgres │                 │
+│  │  App     │──│   16     │                 │
+│  │  (Puma)  │  └──────────┘                 │
+│  │          │                               │
+│  │  Solid   │  ┌───────────────────────┐    │
+│  │  Queue   │──│ - ImportBatchJob      │    │
+│  │ (Worker) │  │ - OpenFinanceSyncJob  │    │
+│  └──────────┘  │ - RecurringTxJob      │    │
+│                └───────────────────────┘    │
+└──────────────────────────────────────────────┘
 ```
-
-Single Rails process with Solid Queue for background jobs (Open Finance sync, import processing, snapshot generation, categorization). No Redis, no Sidekiq, minimal moving parts.
 
 ## 9. Roadmap
 
-### v1 — Expense Management & Cash Flow
+### Completed (v1 Core)
+- Core models: Account, Transaction, Category, Budget, Rules.
+- Import pipelines: CSV/OFX parsers for XP/Nubank, auto-deduplication.
+- Auto-categorization: Rule engine + Review queue.
+- Open Finance: Pluggy integration.
+- MCP Server: Basic tool exposure for OpenClaw.
+- Virtual Clearing & Recurring Transactions (Backend Job + Models).
 
-1. **Project scaffold**: Rails 8, Docker Compose, bootstrap scripts, auth
-2. **Core models**: User, Household, Financial Account, Transaction, Category, Budget, Liability
-3. **Manual entry + CSV/OFX import**: transaction CRUD, CSV/OFX parsers (XP, Nubank, Wise formats)
-4. **Google Sheets import**: one-time migration of historical "Orçamento Casa" spreadsheet
-5. **Auto-categorization**: three-tier pipeline (rules → LLM → human review) + confidence threshold + review queue UI + smart heuristics
-6. **Budget tracking**: per-category monthly limits, joint vs personal budgets, visual indicators
-7. **Expense dashboard**: monthly view, category breakdown, income vs expenses, savings rate
-8. **Mortgage tracker**: outstanding balance, amortization schedule, principal vs interest
-9. **Open Finance integration**: OAuth flow, sync worker (Pluggy or equivalent)
-10. **PWA setup**: manifest, service worker, installable on mobile
-11. **MCP server**: JSON-RPC stdio interface for AI assistant integration
-
-### v2 — Investment Portfolio
-
-12. **Investment models**: Position, Investment Transaction, Snapshot, multi-currency
-13. **Investment dashboard**: positions by asset type, performance vs benchmarks (CDI, IBOV, S&P500)
-14. **Portfolio evolution**: historical net worth chart from snapshots
-15. **Mother's isolated portfolio**: separate scope, dashboard, report export (PDF/CSV)
-16. **Consolidated dashboard**: full net worth (assets - liabilities), asset allocation, cash flow
-17. **Dividend/yield tracking**: investment income over time
-18. **Tax helpers**: cost basis tracking for IR
-
-### v3 — Advanced Features
-
-19. **Travel module**: trip entity, per-day budget by category/currency, trip dashboard
-20. **Email scraping**: Gmail integration to backfill historical investment snapshots
-21. **PDF statement parser**: structured extraction from bank/brokerage PDFs
-22. **ADB fallback module**: screen capture + OCR for non-integrated banks
-23. **Native mobile app** (if PWA isn't sufficient)
-
-## 10. Project Name
-
-**Assimilator** — the Protoss building that extracts and processes vespene gas (resources). Fits the StarCraft Protoss naming convention used across the ecosystem (Nexus, Recall, etc.).
-
-## 11. Repository & Location
-
-- Code: `~/projects/assimilator/`
-- Specs: `/home/abacha/.openclaw/shared-workspace/specs/assimilator/`
-- Verification: run Rails commands via Docker Compose; run specs via the dedicated test service (`docker compose run --rm test ...`) instead of the host environment
-
-## 12. Open Questions
-
-1. ~~**Open Finance provider**~~ — **Resolved**: Pluggy selected and integrated. Pluggy widget for OAuth flow, REST API for sync. Handles XP and Nubank. Known quirk: Itaú OFX files use hybrid SGML/XML format requiring per-tag conversion before parsing.
-2. ~~**Exchange rate source**~~ — **Resolved**: BCB (Banco Central do Brasil) PTAX API chosen. `ExchangeRates::BcbFetcher` service planned for Phase 13 (not yet implemented).
+### Active / Next (v1.5 - v2)
+- Frontend UI for Recurring Transactions (Tailwind + Hotwire).
+- Investment tracking (Positions, Snapshots, Evolution charts).
+- Mother's isolated portfolio views.
+- Consolidated Net Worth dashboard.
+- Dividend & Tax helpers.
