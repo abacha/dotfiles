@@ -68,6 +68,9 @@ unsetopt correct_all
 
 ttyctl -f
 
+# Local bin Configuration
+export PATH="$HOME/.local/bin:$PATH"
+
 # asdf Configuration
 export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
 if [ -d "${ASDF_DATA_DIR:-$HOME/.asdf}" ]; then
