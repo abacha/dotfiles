@@ -81,11 +81,11 @@ if [ "$CURRENT" != "$TARGET" ]; then
 fi
 
 if [ "$ACTION" = "login" ]; then
-    echo "🔑 Running claude auth login for $TARGET..."
+    echo "🔑 Running claude setup-token for $TARGET..."
 
     # We use 'script' to allocate a pseudo-terminal (PTY) so the CLI doesn't hang or hide input prompts
     # while we simultaneously capture the URL to copy it to the clipboard.
-    script -q -e -c "claude auth login" /dev/null | tee >(
+    script -q -e -c "claude setup-token" /dev/null | tee >(
         grep -m 1 -oE 'https://claude\.com[a-zA-Z0-9./?=&_+-]+' | while read -r url; do
             # Use OSC 52
             printf "\033]52;c;%s\007" "$(printf "%s" "$url" | base64 | tr -d '\n')"
