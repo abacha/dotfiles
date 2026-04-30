@@ -88,11 +88,11 @@ setup_neovim() {
   
   if grep -qEi "(debian|proxmox)" /etc/os-release; then
     echo "🐧 Debian/Proxmox detected. Installing Neovim via pre-built binary..."
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
     sudo rm -rf /opt/nvim
-    sudo tar -C /opt -xzf nvim-linux64.tar.gz
-    sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
-    rm nvim-linux64.tar.gz
+    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+    sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+    rm nvim-linux-x86_64.tar.gz
   else
     add_apt_repository_quiet ppa:neovim-ppa/unstable
     apt_install_quiet neovim
