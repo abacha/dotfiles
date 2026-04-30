@@ -21,7 +21,7 @@ add_apt_repository_quiet() {
 # Function to install basic packages
 install_basic_packages() {
   echo "📦 Installing basic packages..."
-  apt_install_quiet tmux vim zsh git most make build-essential bubblewrap
+  apt_install_quiet tmux vim zsh git most make build-essential bubblewrap fzf
 }
 
 # Function to install extra packages (gh, jq, ffmpeg)
