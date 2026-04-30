@@ -46,7 +46,9 @@ setup_docker() {
     curl -fsSL https://get.docker.com/ | sh
   fi
 
-  apt_install_quiet docker-compose
+  if ! command -v docker-compose >/dev/null 2>&1 && ! docker compose version >/dev/null 2>&1; then
+    apt_install_quiet docker-compose || echo "Failed to install docker-compose via apt, skipping."
+  fi
 
   if getent group docker >/dev/null 2>&1 && ! id -nG "$USER" | grep -qw docker; then
     sudo usermod -aG docker "$USER"
@@ -83,8 +85,18 @@ setup_node() {
 # Function to setup Neovim
 setup_neovim() {
   echo "📝 Setting up Neovim..."
-  add_apt_repository_quiet ppa:neovim-ppa/unstable
-  apt_install_quiet neovim
+  
+  if grep -qEi "(debian|proxmox)" /etc/os-release; then
+    echo "🐧 Debian/Proxmox detected. Installing Neovim via pre-built binary..."
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+    sudo rm -rf /opt/nvim
+    sudo tar -C /opt -xzf nvim-linux64.tar.gz
+    sudo ln -sf /opt/nvim-linux64/bin/nvim /usr/local/bin/nvim
+    rm nvim-linux64.tar.gz
+  else
+    add_apt_repository_quiet ppa:neovim-ppa/unstable
+    apt_install_quiet neovim
+  fi
 
   echo "🔌 Installing packer.nvim..."
   if [ ! -d "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim/.git" ]; then
