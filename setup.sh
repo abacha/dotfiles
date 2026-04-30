@@ -227,6 +227,7 @@ setup_zsh() {
 create_symlinks() {
   echo "🔗 Creating symbolic links for dotfiles..."
   ln -sf ~/dotfiles/.zshrc ~/
+  ln -sf ~/dotfiles/.p10k.zsh ~/
   ln -sf ~/dotfiles/.tmux.conf ~/
   ln -sf ~/dotfiles/.gitconfig ~/
   ln -sf ~/dotfiles/.inputrc ~/
