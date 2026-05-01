@@ -234,6 +234,7 @@ create_symlinks() {
   ln -sf ~/dotfiles/.pryrc ~/
   ln -sf ~/dotfiles/.gemrc ~/
   ln -sf ~/dotfiles/.tool-versions ~/
+  ln -sf ~/dotfiles/.gitignore_global ~/.gitignore
 
   mkdir -p ~/.config
   ln -sf ~/dotfiles/nvim ~/.config/
