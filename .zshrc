@@ -112,14 +112,13 @@ export PATH="/home/abacha/.sre-toolkit/bin:$PATH"
 alias hs-start="hs-local services start --exclude clickhouse && hs-local account start && sleep 5 && hs-local server start"
 # <<< Hubstaff <<<
 
-# Codex Auth Rotation
-alias codex-hs="~/dotfiles/ai/tooling/codex-switch.sh hs"
-alias codex-personal="~/dotfiles/ai/tooling/codex-switch.sh personal"
-export EDITOR="nvim"
+# AI CLI Auth Rotation
+alias claude-hs="~/dotfiles/ai/tooling/ai-cli-switch.sh claude hs"
+alias claude-p="~/dotfiles/ai/tooling/ai-cli-switch.sh claude p"
+alias codex-hs="~/dotfiles/ai/tooling/ai-cli-switch.sh codex hs"
+alias codex-p="~/dotfiles/ai/tooling/ai-cli-switch.sh codex p"
 
-# Claude Auth Rotation
-alias claude-hs="~/dotfiles/ai/tooling/claude-switch.sh hs"
-alias claude-personal="~/dotfiles/ai/tooling/claude-switch.sh personal"
+export EDITOR="nvim"
 alias zb="~/dotfiles/ai/tooling/zb.sh"
 
 # Use containerised wacli
