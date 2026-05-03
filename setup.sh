@@ -159,10 +159,18 @@ setup_zoxide() {
   curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
 }
 
+# Function to setup rtk
+setup_rtk() {
+  echo "🔧 Installing rtk..."
+  curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+}
+
 # Function to setup AI CLIs
 setup_ai_clis() {
   echo "🤖 Installing AI CLIs..."
   local existing_claude_target
+
+  setup_rtk
 
   source ~/.asdf/asdf.sh 2>/dev/null || true
   command -v npm >/dev/null 2>&1 || setup_node
@@ -385,6 +393,7 @@ resolve_function() {
     python) echo "setup_python" ;;
     uv) echo "setup_uv" ;;
     zoxide) echo "setup_zoxide" ;;
+    rtk) echo "setup_rtk" ;;
     ai-clis|clis) echo "setup_ai_clis" ;;
     zsh) echo "setup_zsh" ;;
     symlinks|links) echo "create_symlinks" ;;
@@ -393,7 +402,7 @@ resolve_function() {
     tmux) echo "setup_tmux" ;;
     tmuxinator|mux) echo "setup_tmuxinator" ;;
     wsl) echo "setup_wsl" ;;
-    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_zoxide|setup_ai_clis|setup_zsh|create_symlinks|setup_secrets|setup_ai_config|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
+    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_zoxide|setup_rtk|setup_ai_clis|setup_zsh|create_symlinks|setup_secrets|setup_ai_config|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
     *) return 1 ;;
   esac
 }
@@ -415,6 +424,7 @@ Supported aliases:
   python               setup_python
   uv                   setup_uv
   zoxide               setup_zoxide
+  rtk                  setup_rtk
   ai-clis, clis        setup_ai_clis
   zsh                  setup_zsh
   symlinks, links      create_symlinks
@@ -433,8 +443,10 @@ if [ $# -eq 0 ]; then
 elif [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "help" ]; then
   usage
 else
-  fn=$(resolve_function "$1" || true)
-  [ -n "$fn" ] || { echo "Error: unknown function '$1'"; usage; exit 1; }
-  "$fn"
+  for arg in "$@"; do
+    fn=$(resolve_function "$arg" || true)
+    [ -n "$fn" ] || { echo "Error: unknown function '$arg'"; usage; exit 1; }
+    "$fn"
+  done
 fi
 exit 0
