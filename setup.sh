@@ -31,7 +31,7 @@ install_extra_packages() {
   curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
   sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-  
+
   apt_update_quiet
   apt_install_quiet gh jq ffmpeg
 }
@@ -85,7 +85,7 @@ setup_node() {
 # Function to setup Neovim
 setup_neovim() {
   echo "📝 Setting up Neovim..."
-  
+
   if grep -qEi "(debian|proxmox)" /etc/os-release; then
     echo "🐧 Debian/Proxmox detected. Installing Neovim via pre-built binary..."
     curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
@@ -127,7 +127,7 @@ setup_asdf() {
 setup_ruby() {
   echo "💎 Setting up Ruby via ASDF..."
   apt_install_quiet openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
-  
+
   source ~/.asdf/asdf.sh 2>/dev/null || true
   asdf plugin list 2>/dev/null | grep -qx ruby || asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git
   asdf install ruby $RUBY_VERSION
@@ -140,7 +140,7 @@ setup_python() {
   apt_install_quiet make build-essential libssl-dev zlib1g-dev \
     libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
     libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
-    
+
   source ~/.asdf/asdf.sh 2>/dev/null || true
   asdf plugin list 2>/dev/null | grep -qx python || asdf plugin add python
   asdf install python $PYTHON_VERSION
@@ -198,7 +198,7 @@ setup_zsh() {
 
   echo "🐚 Setting up Zsh..."
   sudo chsh -s /bin/zsh $USER
-  
+
   if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "✨ Installing Oh-My-Zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
@@ -271,7 +271,7 @@ setup_tmuxinator() {
 # Function to setup secrets from 1Password
 setup_secrets() {
   echo "🔐 Setting up ~/.env from 1Password..."
-  
+
   if command -v op >/dev/null 2>&1; then
     if op whoami >/dev/null 2>&1 || op account get >/dev/null 2>&1; then
       op read "op://Personal/Dotfiles Env/text" > ~/.env 2>/dev/null && \
@@ -288,8 +288,6 @@ setup_secrets() {
 setup_ai_config() {
   echo "🤖 Setting up AI config links..."
 
-  mkdir -p ~/dotfiles/ai/conventions
-
   # Shared agent definitions
   mkdir -p ~/.codex ~/.claude ~/.gemini ~/.codex/rules
   ln -sfn ~/dotfiles/ai ~/.codex/agents
@@ -297,9 +295,9 @@ setup_ai_config() {
   ln -sfn ~/dotfiles/ai ~/.gemini/agents
 
   # Shared global rules file for each CLI
-  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.claude/CLAUDE.md
-  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.gemini/GEMINI.md
-  ln -sfn ~/dotfiles/ai/conventions/global-rules.md ~/.codex/rules/default.rules
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
 
   echo "📂 Setting up project AGENTS.md and CLAUDE.md symlinks..."
   GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
@@ -315,7 +313,7 @@ setup_ai_config() {
   for const_file in ~/dotfiles/ai/constitutions/*.md; do
     if [ -f "$const_file" ]; then
       proj_name=$(basename "$const_file" .md)
-      
+
       target_dir=$(find ~/ -maxdepth 4 -type d -name "$proj_name" 2>/dev/null | while read d; do
         if [ -d "$d/.git" ]; then
           echo "$d"
@@ -377,7 +375,7 @@ main() {
 
   echo "🔄 Updating git submodules..."
   git submodule update --init --recursive
-  
+
   echo "🎉 Setup complete! Restart your shell or run 'exec zsh' to apply changes."
 }
 
