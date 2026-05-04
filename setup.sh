@@ -288,12 +288,6 @@ setup_secrets() {
 setup_ai_config() {
   echo "🤖 Setting up AI config links..."
 
-  # Shared agent definitions
-  mkdir -p ~/.codex ~/.claude ~/.gemini ~/.codex/rules
-  ln -sfn ~/dotfiles/ai ~/.codex/agents
-  ln -sfn ~/dotfiles/ai ~/.claude/agents
-  ln -sfn ~/dotfiles/ai ~/.gemini/agents
-
   # Shared global rules file for each CLI
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
