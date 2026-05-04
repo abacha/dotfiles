@@ -381,67 +381,91 @@ do_check_claude_auth() {
 }
 
 if [ "$ONLY_CLAUDE" = "1" ]; then
-echo "=== 🦞 Claude Code (OAuth) ==="
-
-if [ -f "$HOME/.claude/.credentials-hs.json" ] || [ -f "$HOME/.claude/.credentials-p.json" ]; then
-    ACTIVE_CLAUDE=$(cat "$HOME/.claude/.active-profile" 2>/dev/null || echo "unknown")
-    if [ "$ACTIVE_CLAUDE" = "hs" ]; then
-        check_claude_auth "$HOME/.claude/.credentials.json" "▶ Hubstaff" 1 "hs"
-        echo ""
-        check_claude_auth "$HOME/.claude/.credentials-p.json" "⏸ Personal" 0 "p"
-    elif [ "$ACTIVE_CLAUDE" = "p" ]; then
-        check_claude_auth "$HOME/.claude/.credentials.json" "▶ Personal" 1 "p"
-        echo ""
-        check_claude_auth "$HOME/.claude/.credentials-hs.json" "⏸ Hubstaff" 0 "hs"
-    else
-        if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
-            check_claude_auth "$HOME/.claude/.credentials-hs.json" "Hubstaff" 1 "hs"
-            echo ""
-        fi
-        if [ -f "$HOME/.claude/.credentials-p.json" ]; then
-            check_claude_auth "$HOME/.claude/.credentials-p.json" "Personal" 1 "p"
-        fi
-    fi
-else
-    if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
-        ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
-        USAGE=$(curl -s --connect-timeout 5 --max-time "$CURL_MAX_TIME" -H "Authorization: Bearer $ACCESS_TOKEN" \
-            -H "anthropic-beta: oauth-2025-04-20" \
-            https://api.anthropic.com/api/oauth/usage)
-
-        ERROR_MSG=$(echo "$USAGE" | jq -r '.error.message // empty')
-        if [ -n "$ERROR_MSG" ]; then
-            echo "   ❌ API Error: $ERROR_MSG"
-        else
-            FIVE_PCT=$(echo "$USAGE" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
-            FIVE_RESET=$(echo "$USAGE" | jq -r '.five_hour.resets_at // "N/A"')
-            WEEK_PCT=$(echo "$USAGE" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
-            WEEK_RESET=$(echo "$USAGE" | jq -r '.seven_day.resets_at // "N/A"')
-
-            [ "$FIVE_PCT" = "null" ] && FIVE_PCT=0
-            [ "$WEEK_PCT" = "null" ] && WEEK_PCT=0
-
-            if [ "$WEEK_PCT" -ge 100 ]; then
-                FIVE_PCT=100
-                FIVE_RESET="$WEEK_RESET"
+    CLAUDE_SECTION_OUT=$(mktemp)
+    {
+        if [ -f "$HOME/.claude/.credentials-hs.json" ] || [ -f "$HOME/.claude/.credentials-p.json" ]; then
+            ACTIVE_CLAUDE=$(cat "$HOME/.claude/.active-profile" 2>/dev/null || echo "unknown")
+            if [ "$ACTIVE_CLAUDE" = "hs" ]; then
+                FIRST_PRINTED=0
+                check_claude_auth "$HOME/.claude/.credentials.json" "▶ Hubstaff" 1 "hs" && FIRST_PRINTED=1
+                if [ -f "$HOME/.claude/.credentials-p.json" ]; then
+                    P_OUT=$(mktemp)
+                    if check_claude_auth "$HOME/.claude/.credentials-p.json" "⏸ Personal" 0 "p" > "$P_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$P_OUT"
+                    fi
+                    rm -f "$P_OUT"
+                fi
+            elif [ "$ACTIVE_CLAUDE" = "p" ]; then
+                FIRST_PRINTED=0
+                check_claude_auth "$HOME/.claude/.credentials.json" "▶ Personal" 1 "p" && FIRST_PRINTED=1
+                if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
+                    HS_OUT=$(mktemp)
+                    if check_claude_auth "$HOME/.claude/.credentials-hs.json" "⏸ Hubstaff" 0 "hs" > "$HS_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$HS_OUT"
+                    fi
+                    rm -f "$HS_OUT"
+                fi
+            else
+                FIRST_PRINTED=0
+                if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
+                    check_claude_auth "$HOME/.claude/.credentials-hs.json" "Hubstaff" 1 "hs" && FIRST_PRINTED=1
+                fi
+                if [ -f "$HOME/.claude/.credentials-p.json" ]; then
+                    P_OUT=$(mktemp)
+                    if check_claude_auth "$HOME/.claude/.credentials-p.json" "Personal" 1 "p" > "$P_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$P_OUT"
+                    fi
+                    rm -f "$P_OUT"
+                fi
             fi
-
-            FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
-            WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
-
-            printf "   ⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
-            printf "   📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
-        fi
-    else
-        CREDS_FILE="$HOME/.claude/.credentials.json"
-        if [ ! -f "$CREDS_FILE" ]; then
-            echo "❌ No credentials found at $CREDS_FILE"
         else
-            check_claude_auth "$CREDS_FILE" "Active"
+            if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+                ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
+                USAGE=$(curl -s --connect-timeout 5 --max-time "$CURL_MAX_TIME" -H "Authorization: Bearer $ACCESS_TOKEN" \
+                    -H "anthropic-beta: oauth-2025-04-20" \
+                    https://api.anthropic.com/api/oauth/usage)
+
+                ERROR_MSG=$(echo "$USAGE" | jq -r '.error.message // empty')
+                if [ -n "$ERROR_MSG" ]; then
+                    echo "   ❌ API Error: $ERROR_MSG"
+                else
+                    FIVE_PCT=$(echo "$USAGE" | jq -r '.five_hour.utilization // 0' | cut -d. -f1)
+                    FIVE_RESET=$(echo "$USAGE" | jq -r '.five_hour.resets_at // "N/A"')
+                    WEEK_PCT=$(echo "$USAGE" | jq -r '.seven_day.utilization // 0' | cut -d. -f1)
+                    WEEK_RESET=$(echo "$USAGE" | jq -r '.seven_day.resets_at // "N/A"')
+
+                    [ "$FIVE_PCT" = "null" ] && FIVE_PCT=0
+                    [ "$WEEK_PCT" = "null" ] && WEEK_PCT=0
+
+                    if [ "$WEEK_PCT" -ge 100 ]; then
+                        FIVE_PCT=100
+                        FIVE_RESET="$WEEK_RESET"
+                    fi
+
+                    FIVE_LEFT=$(format_date_and_time "$FIVE_RESET")
+                    WEEK_LEFT=$(format_date_and_time "$WEEK_RESET")
+
+                    printf "   ⏱️  %-15s %s %s %3d%%  (Resets in: %s)\n" "Session (5h):" "$(status_emoji $FIVE_PCT)" "$(draw_bar $FIVE_PCT)" "$FIVE_PCT" "$FIVE_LEFT"
+                    printf "   📅  %-15s %s %s %3d%%  (Resets in: %s)\n" "Weekly (7d):" "$(status_emoji $WEEK_PCT)" "$(draw_bar $WEEK_PCT)" "$WEEK_PCT" "$WEEK_LEFT"
+                fi
+            else
+                CREDS_FILE="$HOME/.claude/.credentials.json"
+                if [ -f "$CREDS_FILE" ]; then
+                    check_claude_auth "$CREDS_FILE" "Active"
+                fi
+            fi
         fi
+    } > "$CLAUDE_SECTION_OUT"
+
+    if [ -s "$CLAUDE_SECTION_OUT" ]; then
+        echo "=== 🦞 Claude Code (OAuth) ==="
+        cat "$CLAUDE_SECTION_OUT"
+        echo ""
     fi
-fi
-echo ""
+    rm -f "$CLAUDE_SECTION_OUT"
 fi
 
 check_codex_auth() {
@@ -474,8 +498,9 @@ check_codex_auth() {
                     print
                 }
             ' "$profile_cache"
+            return 0
         fi
-        return
+        return 1
     fi
 
     if [ "$FRESH" = "1" ]; then
@@ -484,12 +509,19 @@ check_codex_auth() {
 
     TMP_OUTPUT=$(mktemp)
     do_check_codex_auth "$auth_file" "$label" > "$TMP_OUTPUT"
+    
+    if grep -Eqi "could not fetch|No OAuth access token found|Failed to get a valid OAuth access token|Install CodexBar CLI" "$TMP_OUTPUT"; then
+        rm -f "$TMP_OUTPUT"
+        return 1
+    fi
+
     cat "$TMP_OUTPUT"
     if should_cache_output "$TMP_OUTPUT"; then
         mv "$TMP_OUTPUT" "$profile_cache"
     else
         rm -f "$TMP_OUTPUT"
     fi
+    return 0
 }
 
 do_check_codex_auth() {
@@ -561,34 +593,56 @@ do_check_codex_auth() {
 
 # ==================== OPENAI CODEX ====================
 if [ "$ONLY_CODEX" = "1" ]; then
-if [ "$ONLY_CLAUDE" = "1" ]; then echo ""; fi
-echo "=== 🤖 OpenAI Codex ==="
-
-if [ -f "$HOME/.codex/auth-hs.json" ] || [ -f "$HOME/.codex/auth-p.json" ]; then
-    ACTIVE_CODEX=$(cat "$HOME/.codex/.active-profile" 2>/dev/null || echo "unknown")
-    if [ "$ACTIVE_CODEX" = "hs" ]; then
-        check_codex_auth "$HOME/.codex/auth.json" "▶ Hubstaff" 1 "hs"
-        echo ""
-        check_codex_auth "$HOME/.codex/auth-p.json" "⏸ Personal" 0 "p"
-    elif [ "$ACTIVE_CODEX" = "p" ]; then
-        check_codex_auth "$HOME/.codex/auth.json" "▶ Personal" 1 "p"
-        echo ""
-        check_codex_auth "$HOME/.codex/auth-hs.json" "⏸ Hubstaff" 0 "hs"
-    else
-        if [ -f "$HOME/.codex/auth-hs.json" ]; then
-            check_codex_auth "$HOME/.codex/auth-hs.json" "Hubstaff" 1 "hs"
-            echo ""
+    CODEX_SECTION_OUT=$(mktemp)
+    {
+        if [ -f "$HOME/.codex/auth-hs.json" ] || [ -f "$HOME/.codex/auth-p.json" ]; then
+            ACTIVE_CODEX=$(cat "$HOME/.codex/.active-profile" 2>/dev/null || echo "unknown")
+            if [ "$ACTIVE_CODEX" = "hs" ]; then
+                FIRST_PRINTED=0
+                check_codex_auth "$HOME/.codex/auth.json" "▶ Hubstaff" 1 "hs" && FIRST_PRINTED=1
+                if [ -f "$HOME/.codex/auth-p.json" ]; then
+                    P_OUT=$(mktemp)
+                    if check_codex_auth "$HOME/.codex/auth-p.json" "⏸ Personal" 0 "p" > "$P_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$P_OUT"
+                    fi
+                    rm -f "$P_OUT"
+                fi
+            elif [ "$ACTIVE_CODEX" = "p" ]; then
+                FIRST_PRINTED=0
+                check_codex_auth "$HOME/.codex/auth.json" "▶ Personal" 1 "p" && FIRST_PRINTED=1
+                if [ -f "$HOME/.codex/auth-hs.json" ]; then
+                    HS_OUT=$(mktemp)
+                    if check_codex_auth "$HOME/.codex/auth-hs.json" "⏸ Hubstaff" 0 "hs" > "$HS_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$HS_OUT"
+                    fi
+                    rm -f "$HS_OUT"
+                fi
+            else
+                FIRST_PRINTED=0
+                if [ -f "$HOME/.codex/auth-hs.json" ]; then
+                    check_codex_auth "$HOME/.codex/auth-hs.json" "Hubstaff" 1 "hs" && FIRST_PRINTED=1
+                fi
+                if [ -f "$HOME/.codex/auth-p.json" ]; then
+                    P_OUT=$(mktemp)
+                    if check_codex_auth "$HOME/.codex/auth-p.json" "Personal" 1 "p" > "$P_OUT"; then
+                        [ "$FIRST_PRINTED" = "1" ] && echo ""
+                        cat "$P_OUT"
+                    fi
+                    rm -f "$P_OUT"
+                fi
+            fi
+        else
+            if [ -f "$HOME/.codex/auth.json" ]; then
+                check_codex_auth "$HOME/.codex/auth.json" "Active"
+            fi
         fi
-        if [ -f "$HOME/.codex/auth-p.json" ]; then
-            check_codex_auth "$HOME/.codex/auth-p.json" "Personal" 1 "p"
-        fi
-    fi
-else
-    if [ ! -f "$HOME/.codex/auth.json" ]; then
-        echo "❌ No Codex credentials found at $HOME/.codex/auth.json"
-    else
-        check_codex_auth "$HOME/.codex/auth.json" "Active"
-    fi
-fi
+    } > "$CODEX_SECTION_OUT"
 
+    if [ -s "$CODEX_SECTION_OUT" ]; then
+        echo "=== 🤖 OpenAI Codex ==="
+        cat "$CODEX_SECTION_OUT"
+    fi
+    rm -f "$CODEX_SECTION_OUT"
 fi
