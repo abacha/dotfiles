@@ -56,6 +56,29 @@ setup_docker() {
   fi
 }
 
+# Idempotent guards — call these to satisfy prerequisites without re-running full setups
+ensure_asdf() {
+  [ -d "$HOME/.asdf/.git" ] && { export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"; source "$HOME/.asdf/asdf.sh" 2>/dev/null || true; return 0; }
+  setup_asdf
+}
+
+ensure_node() {
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  command -v node >/dev/null 2>&1 && return 0
+  setup_node
+}
+
+ensure_ruby() {
+  source ~/.asdf/asdf.sh 2>/dev/null || true
+  command -v ruby >/dev/null 2>&1 && return 0
+  setup_ruby
+}
+
+ensure_uv() {
+  command -v uv >/dev/null 2>&1 && return 0
+  setup_uv
+}
+
 # Function to configure npm global installs for the current user
 setup_npm_user_prefix() {
   mkdir -p "$HOME/.local"
@@ -106,6 +129,9 @@ setup_neovim() {
   fi
 
   apt_install_quiet ripgrep
+
+  mkdir -p ~/.config
+  ln -sf ~/dotfiles/nvim ~/.config/
 }
 
 # Function to setup ASDF
@@ -126,6 +152,7 @@ setup_asdf() {
 # Function to setup Ruby
 setup_ruby() {
   echo "💎 Setting up Ruby via ASDF..."
+  ensure_asdf
   apt_install_quiet openssl gcc zlib1g-dev libffi-dev libyaml-dev libssl-dev
 
   source ~/.asdf/asdf.sh 2>/dev/null || true
@@ -137,6 +164,7 @@ setup_ruby() {
 # Function to setup Python
 setup_python() {
   echo "🐍 Setting up Python via ASDF..."
+  ensure_asdf
   apt_install_quiet make build-essential libssl-dev zlib1g-dev \
     libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
     libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -153,46 +181,80 @@ setup_uv() {
   curl -LsSf https://astral.sh/uv/install.sh | sh
 }
 
-# Function to setup zoxide
-setup_zoxide() {
-  echo "🚀 Installing zoxide..."
-  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-}
-
-# Function to setup rtk
+# Function to setup rtk (internal — not a public setup target)
 setup_rtk() {
   echo "🔧 Installing rtk..."
   curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 }
 
-# Function to setup AI CLIs
-setup_ai_clis() {
-  echo "🤖 Installing AI CLIs..."
-  local existing_claude_target
+# Function to setup AI tools: CLIs, config links, rtk, graphify
+setup_ai() {
+  echo "🤖 Setting up AI tools..."
 
+  # Internal tooling
   setup_rtk
+  ensure_uv
+  uv tool install graphifyy 2>/dev/null || uv tool upgrade graphifyy 2>/dev/null || true
 
-  source ~/.asdf/asdf.sh 2>/dev/null || true
-  command -v npm >/dev/null 2>&1 || setup_node
+  # AI CLIs
+  ensure_node
   setup_npm_user_prefix
-
   npm install -g @openai/codex || true
   npm install -g @google/gemini-cli || true
 
+  local existing_claude_target
   if [ -L "$HOME/.local/bin/claude" ]; then
     existing_claude_target="$(readlink "$HOME/.local/bin/claude")"
   else
     existing_claude_target=""
   fi
-
   if [ -e "$HOME/.local/bin/claude" ] && [[ "$existing_claude_target" != *".local/lib/node_modules/@anthropic-ai/claude-code/"* ]]; then
     echo "Claude CLI binary already exists at ~/.local/bin/claude. Skipping npm install for @anthropic-ai/claude-code."
   else
     npm install -g @anthropic-ai/claude-code || true
   fi
+
+  # Global constitution symlinks
+  mkdir -p ~/.claude ~/.gemini ~/.codex
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
+
+  # Per-project constitution symlinks
+  echo "📂 Setting up project AGENTS.md and CLAUDE.md symlinks..."
+  GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
+  touch "$GITIGNORE_FILE"
+  git config --global core.excludesfile "$GITIGNORE_FILE"
+  if ! grep -q "^AGENTS.md$" "$GITIGNORE_FILE"; then
+    echo "AGENTS.md" >> "$GITIGNORE_FILE"
+  fi
+  if ! grep -q "^CLAUDE.md$" "$GITIGNORE_FILE"; then
+    echo "CLAUDE.md" >> "$GITIGNORE_FILE"
+  fi
+
+  for const_file in ~/dotfiles/ai/constitutions/*.md; do
+    if [ -f "$const_file" ]; then
+      proj_name=$(basename "$const_file" .md)
+
+      target_dir=$(find ~/ -maxdepth 4 -type d -name "$proj_name" 2>/dev/null | while read d; do
+        if [ -d "$d/.git" ]; then
+          echo "$d"
+          break
+        fi
+      done | head -n 1)
+
+      if [ -n "$target_dir" ] && [ -d "$target_dir" ]; then
+        rm -f "$target_dir/AGENTS.md"
+        ln -s "$const_file" "$target_dir/AGENTS.md"
+        rm -f "$target_dir/CLAUDE.md"
+        ln -s "$const_file" "$target_dir/CLAUDE.md"
+        echo "   ✅ Symlinked $proj_name -> $target_dir/{AGENTS.md, CLAUDE.md}"
+      fi
+    fi
+  done
 }
 
-# Function to setup Zsh
+# Function to setup Zsh (includes zoxide and shell config symlinks)
 setup_zsh() {
   local zsh_custom
 
@@ -229,24 +291,23 @@ setup_zsh() {
   else
     echo "zsh-autocomplete already installed. Skipping."
   fi
-}
 
-# Function to create symbolic links for dotfiles
-create_symlinks() {
-  echo "🔗 Creating symbolic links for dotfiles..."
+  echo "🚀 Installing zoxide..."
+  curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+
   ln -sf ~/dotfiles/.zshrc ~/
   ln -sf ~/dotfiles/.p10k.zsh ~/
-  ln -sf ~/dotfiles/.tmux.conf ~/
+}
+
+# Function to create symbolic links for core dotfiles
+create_symlinks() {
+  echo "🔗 Creating symbolic links for dotfiles..."
   ln -sf ~/dotfiles/.gitconfig ~/
   ln -sf ~/dotfiles/.inputrc ~/
   ln -sf ~/dotfiles/.pryrc ~/
   ln -sf ~/dotfiles/.gemrc ~/
   ln -sf ~/dotfiles/.tool-versions ~/
   ln -sf ~/dotfiles/.gitignore_global ~/.gitignore
-
-  mkdir -p ~/.config
-  ln -sf ~/dotfiles/nvim ~/.config/
-  ln -sf ~/dotfiles/tmuxinator ~/.config/
 }
 
 # Function to setup Tmux
@@ -257,17 +318,19 @@ setup_tmux() {
   else
     echo "TPM already installed. Skipping."
   fi
+
+  ln -sf ~/dotfiles/.tmux.conf ~/
 }
 
 # Function to setup Tmuxinator
 setup_tmuxinator() {
   echo "🚀 Setting up Tmuxinator..."
-  source ~/.asdf/asdf.sh 2>/dev/null || true
+  ensure_ruby
   gem install tmuxinator
-  ln -sf ~/dotfiles/.tmuxinator ~/.config/
+  mkdir -p ~/.config
+  ln -sfn ~/dotfiles/tmuxinator ~/.config/tmuxinator
 }
 
-# Function to setup AI config links
 # Function to setup secrets from 1Password
 setup_secrets() {
   echo "🔐 Setting up ~/.env from 1Password..."
@@ -285,48 +348,6 @@ setup_secrets() {
   fi
 }
 
-setup_ai_config() {
-  echo "🤖 Setting up AI config links..."
-
-  # Shared global rules file for each CLI
-  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
-  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
-  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
-
-  echo "📂 Setting up project AGENTS.md and CLAUDE.md symlinks..."
-  GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
-  touch "$GITIGNORE_FILE"
-  git config --global core.excludesfile "$GITIGNORE_FILE"
-  if ! grep -q "^AGENTS.md$" "$GITIGNORE_FILE"; then
-    echo "AGENTS.md" >> "$GITIGNORE_FILE"
-  fi
-  if ! grep -q "^CLAUDE.md$" "$GITIGNORE_FILE"; then
-    echo "CLAUDE.md" >> "$GITIGNORE_FILE"
-  fi
-
-  for const_file in ~/dotfiles/ai/constitutions/*.md; do
-    if [ -f "$const_file" ]; then
-      proj_name=$(basename "$const_file" .md)
-
-      target_dir=$(find ~/ -maxdepth 4 -type d -name "$proj_name" 2>/dev/null | while read d; do
-        if [ -d "$d/.git" ]; then
-          echo "$d"
-          break
-        fi
-      done | head -n 1)
-
-      if [ -n "$target_dir" ] && [ -d "$target_dir" ]; then
-        rm -f "$target_dir/AGENTS.md"
-        ln -s "$const_file" "$target_dir/AGENTS.md"
-        rm -f "$target_dir/CLAUDE.md"
-        ln -s "$const_file" "$target_dir/CLAUDE.md"
-        echo "   ✅ Symlinked $proj_name -> $target_dir/{AGENTS.md, CLAUDE.md}"
-      fi
-    fi
-  done
-}
-
-# Function to setup WSL
 # Function to setup WSL
 setup_wsl() {
   echo "🪟 Setting up WSL..."
@@ -353,12 +374,10 @@ main() {
   setup_ruby
   setup_python
   setup_uv
-  setup_zoxide
-  setup_ai_clis
   setup_zsh
+  setup_ai
   create_symlinks
   setup_secrets
-  setup_ai_config
   setup_tmux
   setup_tmuxinator
 
@@ -384,47 +403,41 @@ resolve_function() {
     ruby) echo "setup_ruby" ;;
     python) echo "setup_python" ;;
     uv) echo "setup_uv" ;;
-    zoxide) echo "setup_zoxide" ;;
-    rtk) echo "setup_rtk" ;;
-    ai-clis|clis) echo "setup_ai_clis" ;;
+    ai) echo "setup_ai" ;;
     zsh) echo "setup_zsh" ;;
     symlinks|links) echo "create_symlinks" ;;
     secrets) echo "setup_secrets" ;;
-    ai) echo "setup_ai_config" ;;
     tmux) echo "setup_tmux" ;;
     tmuxinator|mux) echo "setup_tmuxinator" ;;
     wsl) echo "setup_wsl" ;;
-    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_zoxide|setup_rtk|setup_ai_clis|setup_zsh|create_symlinks|setup_secrets|setup_ai_config|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
+    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_ai|setup_zsh|create_symlinks|setup_secrets|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
     *) return 1 ;;
   esac
 }
 
 usage() {
   cat <<'EOF'
-Usage: ./setup.sh [function|alias]
+Usage: ./setup.sh [alias ...]
 
 Run without arguments to execute the full setup.
+Dependencies are resolved automatically — e.g. `ruby` installs asdf first if missing.
 
-Supported aliases:
-  basic, packages      install_basic_packages
-  extra                install_extra_packages
-  docker               setup_docker
-  node                 setup_node
-  neovim, nvim         setup_neovim
-  asdf                 setup_asdf
-  ruby                 setup_ruby
-  python               setup_python
-  uv                   setup_uv
-  zoxide               setup_zoxide
-  rtk                  setup_rtk
-  ai-clis, clis        setup_ai_clis
-  zsh                  setup_zsh
-  symlinks, links      create_symlinks
-  secrets              setup_secrets
-  ai                   setup_ai_config
-  tmux                 setup_tmux
-  tmuxinator, mux      setup_tmuxinator
-  wsl                  setup_wsl
+  basic, packages      Core apt packages (tmux, vim, zsh, git, fzf...)
+  extra                Extra apt packages (gh, jq, ffmpeg)
+  docker               Docker + docker-compose
+  asdf                 ASDF version manager
+  node                 Node.js via asdf              [needs: asdf]
+  ruby                 Ruby via asdf                 [needs: asdf]
+  python               Python via asdf               [needs: asdf]
+  uv                   uv Python manager (standalone)
+  ai                   AI CLIs + config + rtk + graphify  [needs: node, uv]
+  neovim, nvim         Neovim + packer + ripgrep
+  zsh                  Zsh + oh-my-zsh + p10k + zoxide
+  tmux                 Tmux + TPM
+  tmuxinator, mux      Tmuxinator gem                [needs: ruby]
+  symlinks, links      Core dotfile symlinks
+  secrets              Pull ~/.env from 1Password
+  wsl                  WSL extras (xclip, browser)
 
 You can also pass the full function name directly.
 EOF
