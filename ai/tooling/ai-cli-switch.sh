@@ -48,7 +48,7 @@ save_current() {
 
 # ── Push to all nodes ──────────────────────────────────────────────────────────
 push_all() {
-    local nodes=(cyber-core)
+    local nodes=(cyber-core forge stargate)
 
     local claude_files=(
         "$HOME/.claude/.credentials.json"
