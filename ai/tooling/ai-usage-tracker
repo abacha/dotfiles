@@ -304,29 +304,20 @@ do_check_claude_auth() {
         now_ms=$(($(date +%s) * 1000))
 
         if [ -n "$expires_at" ] && [ "$now_ms" -gt "$((expires_at - 60000))" ]; then
-            local temp_swap=0
-            if [ "$creds_file" != "$HOME/.claude/.credentials.json" ]; then
-                cp "$creds_file" "$HOME/.claude/.credentials.json.tmp_tracker" 2>/dev/null || true
-                cp "$HOME/.claude/.credentials.json" "$HOME/.claude/.credentials.json.backup_tracker" 2>/dev/null || true
-                cp "$creds_file" "$HOME/.claude/.credentials.json" 2>/dev/null || true
-                temp_swap=1
-            fi
-
-            export PATH=/home/abacha/.asdf/installs/nodejs/25.7.0/bin:$PATH
-            if command -v claude >/dev/null 2>&1; then
-                echo "2+2" | run_with_timeout claude >/dev/null 2>&1 || true
-                # Re-read token
-                access_token=$(jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json")
-                if [ "$temp_swap" -eq 1 ]; then
-                    cp "$HOME/.claude/.credentials.json" "$creds_file" 2>/dev/null || true
+            if [ "$creds_file" = "$HOME/.claude/.credentials.json" ]; then
+                export PATH=/home/abacha/.asdf/installs/nodejs/25.7.0/bin:$PATH
+                if command -v claude >/dev/null 2>&1; then
+                    echo "2+2" | run_with_timeout claude >/dev/null 2>&1 || true
+                    # Re-read token
+                    access_token=$(jq -r '.claudeAiOauth.accessToken // empty' "$HOME/.claude/.credentials.json")
+                else
+                    echo "   ❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
                 fi
             else
-                echo "   ❌ OAuth token expired and 'claude' CLI not found. Cannot auto-refresh."
-            fi
-
-            if [ "$temp_swap" -eq 1 ]; then
-                mv "$HOME/.claude/.credentials.json.backup_tracker" "$HOME/.claude/.credentials.json" 2>/dev/null || true
-                rm -f "$HOME/.claude/.credentials.json.tmp_tracker" 2>/dev/null || true
+                # For inactive profiles, we do NOT want to temp-swap and run "claude" because
+                # that would corrupt ~/.claude.json of the ACTIVE profile with this inactive profiles account info.
+                echo "   ⚠️  OAuth token expired for this inactive profile. Switch to it to refresh."
+                return
             fi
         fi
 

@@ -29,20 +29,30 @@ CLAUDE_DIR="$HOME/.claude"
 CODEX_DIR="$HOME/.codex"
 
 # ── Save current state ─────────────────────────────────────────────────────────
+save_dir() {
+    local src=$1
+    local prof=$2
+    [ -d "$src" ] || return 0
+    rm -rf "${src}-${prof}"
+    cp -r "$src" "${src}-${prof}"
+}
+
+save_file() {
+    local src=$1
+    local dst=$2
+    [ -f "$src" ] || return 0
+    cp "$src" "$dst"
+}
+
 save_current() {
     local prof=$1
     [[ "$prof" == "unknown" ]] && return
 
     if [[ "$TOOL" == "claude" ]]; then
-        [ -f "$CLAUDE_DIR/.credentials.json" ] && cp "$CLAUDE_DIR/.credentials.json" "$CLAUDE_DIR/.credentials-${prof}.json"
-        [ -f "$HOME/.claude.json" ]            && cp "$HOME/.claude.json" "$HOME/.claude-${prof}.json"
-        [ -d "$CLAUDE_DIR/sessions" ]     && rm -rf "$CLAUDE_DIR/sessions-${prof}"     && cp -r "$CLAUDE_DIR/sessions"     "$CLAUDE_DIR/sessions-${prof}"
-        [ -d "$CLAUDE_DIR/session-env" ]  && rm -rf "$CLAUDE_DIR/session-env-${prof}"  && cp -r "$CLAUDE_DIR/session-env"  "$CLAUDE_DIR/session-env-${prof}"
-        [ -f "$CLAUDE_DIR/history.jsonl" ] && cp "$CLAUDE_DIR/history.jsonl" "$CLAUDE_DIR/history-${prof}.jsonl"
+        save_file "$CLAUDE_DIR/.credentials.json" "$CLAUDE_DIR/.credentials-${prof}.json"
+        save_file "$HOME/.claude.json" "$HOME/.claude-${prof}.json"
     else
-        [ -f "$CODEX_DIR/auth.json" ]      && cp "$CODEX_DIR/auth.json" "$CODEX_DIR/auth-${prof}.json"
-        [ -d "$CODEX_DIR/sessions" ]       && rm -rf "$CODEX_DIR/sessions-${prof}" && cp -r "$CODEX_DIR/sessions" "$CODEX_DIR/sessions-${prof}"
-        [ -f "$CODEX_DIR/history.jsonl" ]  && cp "$CODEX_DIR/history.jsonl" "$CODEX_DIR/history-${prof}.jsonl"
+        save_file "$CODEX_DIR/auth.json" "$CODEX_DIR/auth-${prof}.json"
     fi
 }
 
@@ -110,6 +120,26 @@ if [[ "$ACTION" == "backup" ]]; then
 fi
 
 # ── Switch profile ─────────────────────────────────────────────────────────────
+restore_dir() {
+    local base=$1
+    local prof=$2
+    if [ -d "${base}-${prof}" ]; then
+        rm -rf "$base" && cp -r "${base}-${prof}" "$base"
+    else
+        rm -rf "$base" && mkdir -p "$base"
+    fi
+}
+
+restore_file() {
+    local src=$1
+    local dst=$2
+    if [ -f "$src" ]; then
+        cp "$src" "$dst"
+    else
+        rm -f "$dst"
+    fi
+}
+
 if [[ "$CURRENT" != "$TARGET" ]]; then
     save_current "$CURRENT"
 
@@ -127,41 +157,10 @@ if [[ "$CURRENT" != "$TARGET" ]]; then
     fi
 
     if [[ "$TOOL" == "claude" ]]; then
-        [ -f "$CLAUDE_DIR/.credentials-${TARGET}.json" ] \
-            && cp "$CLAUDE_DIR/.credentials-${TARGET}.json" "$CLAUDE_DIR/.credentials.json" \
-            || rm -f "$CLAUDE_DIR/.credentials.json"
-        [ -f "$HOME/.claude-${TARGET}.json" ] \
-            && cp "$HOME/.claude-${TARGET}.json" "$HOME/.claude.json" \
-            || rm -f "$HOME/.claude.json"
-        if [ -d "$CLAUDE_DIR/sessions-${TARGET}" ]; then
-            rm -rf "$CLAUDE_DIR/sessions" && cp -r "$CLAUDE_DIR/sessions-${TARGET}" "$CLAUDE_DIR/sessions"
-        else
-            rm -rf "$CLAUDE_DIR/sessions" && mkdir -p "$CLAUDE_DIR/sessions"
-        fi
-        if [ -d "$CLAUDE_DIR/session-env-${TARGET}" ]; then
-            rm -rf "$CLAUDE_DIR/session-env" && cp -r "$CLAUDE_DIR/session-env-${TARGET}" "$CLAUDE_DIR/session-env"
-        else
-            rm -rf "$CLAUDE_DIR/session-env" && mkdir -p "$CLAUDE_DIR/session-env"
-        fi
-        if [ -f "$CLAUDE_DIR/history-${TARGET}.jsonl" ]; then
-            cp "$CLAUDE_DIR/history-${TARGET}.jsonl" "$CLAUDE_DIR/history.jsonl"
-        else
-            rm -f "$CLAUDE_DIR/history.jsonl" && touch "$CLAUDE_DIR/history.jsonl"
-        fi
+        restore_file "$CLAUDE_DIR/.credentials-${TARGET}.json" "$CLAUDE_DIR/.credentials.json"
+        restore_file "$HOME/.claude-${TARGET}.json" "$HOME/.claude.json"
     else
-        [ -f "$CODEX_DIR/auth-${TARGET}.json" ] \
-            && cp "$CODEX_DIR/auth-${TARGET}.json" "$CODEX_DIR/auth.json" \
-            || rm -f "$CODEX_DIR/auth.json"
-        if [ -d "$CODEX_DIR/sessions-${TARGET}" ]; then
-            rm -rf "$CODEX_DIR/sessions" && cp -r "$CODEX_DIR/sessions-${TARGET}" "$CODEX_DIR/sessions"
-        else
-            rm -rf "$CODEX_DIR/sessions" && mkdir -p "$CODEX_DIR/sessions"
-        fi
-        if [ -f "$CODEX_DIR/history-${TARGET}.jsonl" ]; then
-            cp "$CODEX_DIR/history-${TARGET}.jsonl" "$CODEX_DIR/history.jsonl"
-        else
-            rm -f "$CODEX_DIR/history.jsonl" && touch "$CODEX_DIR/history.jsonl"
-        fi
+        restore_file "$CODEX_DIR/auth-${TARGET}.json" "$CODEX_DIR/auth.json"
     fi
 
     echo "$TARGET" > "$ACTIVE_FILE"
@@ -193,4 +192,8 @@ if [[ "$ACTION" == "login" ]]; then
 fi
 
 # ── Push (if requested) ────────────────────────────────────────────────────────
-[[ "$PUSH" == "true" ]] && push_all
+if [[ "$PUSH" == "true" ]]; then
+    push_all
+fi
+
+exit 0
