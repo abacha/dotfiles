@@ -214,8 +214,9 @@ setup_ai() {
     npm install -g @anthropic-ai/claude-code || true
   fi
 
-  # Global constitution symlinks
+  # Global AI config symlinks
   mkdir -p ~/.claude ~/.gemini ~/.codex
+  ln -sf ~/dotfiles/ai/claude/settings.json ~/.claude/settings.json
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
