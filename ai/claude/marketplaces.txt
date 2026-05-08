@@ -1,0 +1,2 @@
+anthropics/claude-plugins-official
+mksglu/claude-context-mode

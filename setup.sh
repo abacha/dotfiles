@@ -221,6 +221,21 @@ setup_ai() {
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
 
+  # Restore Claude Marketplaces & Plugins
+  if command -v claude >/dev/null 2>&1 && [ -f ~/dotfiles/ai/claude/marketplaces.txt ]; then
+    echo "📦 Restoring Claude marketplaces..."
+    while read -r repo; do
+      [ -n "$repo" ] && claude plugin marketplace add "$repo" >/dev/null 2>&1 || true
+    done < ~/dotfiles/ai/claude/marketplaces.txt
+
+    if [ -f ~/.claude/settings.json ]; then
+      echo "🧩 Installing Claude plugins..."
+      jq -r '.enabledPlugins | to_entries | map(select(.value == true)) | .[].key' ~/.claude/settings.json 2>/dev/null | while read -r plugin; do
+        [ -n "$plugin" ] && claude plugin install "$plugin" >/dev/null 2>&1 || true
+      done
+    fi
+  fi
+
   # Per-project constitution symlinks
   echo "📂 Setting up project AGENTS.md and CLAUDE.md symlinks..."
   GITIGNORE_FILE=$(git config --global core.excludesfile || echo "$HOME/.gitignore")
