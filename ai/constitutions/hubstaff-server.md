@@ -95,3 +95,13 @@ The Compose file at `~/.sre-toolkit/local/compose.services.yml` is the only plac
 - Since the toolkit scripts already call `docker compose` with that base file, there’s no extra command-line flag; just edit the YAML directly and restart the service.
 
 Keep this file updated if you discover any new quirks or additional helpers.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
