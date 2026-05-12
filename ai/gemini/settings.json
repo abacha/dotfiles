@@ -1,0 +1,55 @@
+{
+  "general": {
+    "preferredEditor": "neovim",
+    "vimMode": true,
+    "previewFeatures": false,
+    "enablePromptCompletion": true,
+    "enableNotifications": true,
+    "plan": {
+      "directory": "~/.openclaw/workspace/specs/"
+    }
+  },
+  "security": {
+    "auth": {
+      "selectedType": "gemini-api-key"
+    },
+    "folderTrust": {
+      "enabled": true
+    }
+  },
+  "ui": {
+    "theme": "GitHub",
+    "footer": {
+      "hideContextPercentage": false
+    },
+    "dynamicWindowTitle": true,
+    "showStatusInTitle": true,
+    "showUserIdentity": false,
+    "useAlternateBuffer": false,
+    "hideTips": true
+  },
+  "output": {
+    "format": "text"
+  },
+  "tools": {
+    "shell": {
+      "showColor": true
+    }
+  },
+  "ide": {
+    "enabled": true
+  },
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/abacha/.gemini/hooks/rtk-hook-gemini.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
