@@ -3,7 +3,7 @@
 
 ## Project
 
-Private single-user "ChatGPT with memory" system. Hybrid search (FTS5 + FAISS) over
+Personal memory + retrieval system over imported chats and documents. Hybrid search (FTS5 + FAISS) over
 ingested ChatGPT exports, WhatsApp chats, coding agent sessions (Claude Code, Codex, Gemini CLI, OpenClaw), and local files.
 LLM-powered answers with multi-provider fallback (OpenAI, Anthropic, Gemini).
 
@@ -298,3 +298,13 @@ Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 - **Host-side DB:** `backend/data/app.db` — may not reflect live state. Never assume parity.
 - **Vector Index:** `/app/data/faiss.index` in the container volume.
 - **HMR:** Frontend source is volume-mapped for Hot Module Replacement in dev.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- For cross-module "how does X relate to Y" questions, prefer `graphify query "<question>"`, `graphify path "<A>" "<B>"`, or `graphify explain "<concept>"` over grep — these traverse the graph's EXTRACTED + INFERRED edges instead of scanning files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
