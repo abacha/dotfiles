@@ -126,3 +126,7 @@ eval "$(zoxide init zsh)"
 
 # Added by Antigravity CLI installer
 export PATH="/home/abacha/.local/bin:$PATH"
+
+# Fix OpenClaw TUI Encoding
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
