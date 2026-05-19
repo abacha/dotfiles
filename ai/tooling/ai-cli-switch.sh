@@ -41,7 +41,7 @@ save_file() {
     local src=$1
     local dst=$2
     [ -f "$src" ] || return 0
-    cp "$src" "$dst"
+    cp -p "$src" "$dst"
 }
 
 save_current() {
@@ -57,24 +57,22 @@ save_current() {
 }
 
 # ── Push to all nodes ──────────────────────────────────────────────────────────
+# Only pushes named backup files. Each node's active profile is preserved by
+# re-deriving .credentials.json from its own .active-profile after the sync.
 push_all() {
     local nodes=(cyber-core forge stargate)
 
-    local claude_files=(
-        "$HOME/.claude/.credentials.json"
-        "$HOME/.claude/.credentials-hs.json"
-        "$HOME/.claude/.credentials-p.json"
-        "$HOME/.claude/.active-profile"
-        "$HOME/.claude.json"
-        "$HOME/.claude-hs.json"
-        "$HOME/.claude-p.json"
-    )
-    local codex_files=(
-        "$HOME/.codex/auth.json"
-        "$HOME/.codex/auth-hs.json"
-        "$HOME/.codex/auth-p.json"
-        "$HOME/.codex/.active-profile"
-    )
+    local claude_dir_files=()
+    local claude_home_files=()
+    for prof in hs p; do
+        [ -f "$HOME/.claude/.credentials-${prof}.json" ] && claude_dir_files+=("$HOME/.claude/.credentials-${prof}.json")
+        [ -f "$HOME/.claude-${prof}.json" ]              && claude_home_files+=("$HOME/.claude-${prof}.json")
+    done
+
+    local codex_files=()
+    for prof in hs p; do
+        [ -f "$HOME/.codex/auth-${prof}.json" ] && codex_files+=("$HOME/.codex/auth-${prof}.json")
+    done
 
     echo "Pushing credentials to homelab nodes..."
     local node
@@ -85,18 +83,25 @@ push_all() {
             continue
         }
 
-        local dir_files=() home_files=() c_files=()
-        for f in "${claude_files[@]}"; do
-            [ -f "$f" ] || continue
-            [[ "$f" == "$HOME/.claude/"* ]] && dir_files+=("$f") || home_files+=("$f")
-        done
-        for f in "${codex_files[@]}"; do
-            [ -f "$f" ] && c_files+=("$f")
-        done
+        [ ${#claude_dir_files[@]} -gt 0 ]  && rsync -az --no-perms "${claude_dir_files[@]}"  "${node}:~/.claude/"
+        [ ${#claude_home_files[@]} -gt 0 ] && rsync -az --no-perms "${claude_home_files[@]}" "${node}:~/"
+        [ ${#codex_files[@]} -gt 0 ]       && rsync -az --no-perms "${codex_files[@]}"       "${node}:~/.codex/"
 
-        [ ${#dir_files[@]} -gt 0 ]   && rsync -az --no-perms "${dir_files[@]}"   "${node}:~/.claude/"
-        [ ${#home_files[@]} -gt 0 ]  && rsync -az --no-perms "${home_files[@]}"  "${node}:~/"
-        [ ${#c_files[@]} -gt 0 ]     && rsync -az --no-perms "${c_files[@]}"     "${node}:~/.codex/"
+        # Re-apply credentials for whichever profile is already active on the remote node
+        ssh -o ConnectTimeout=5 "$node" '
+            active=$(cat ~/.claude/.active-profile 2>/dev/null || echo "")
+            if [ -n "$active" ] && [ -f ~/.claude/.credentials-${active}.json ]; then
+                cp ~/.claude/.credentials-${active}.json ~/.claude/.credentials.json
+            fi
+            if [ -n "$active" ] && [ -f ~/.claude-${active}.json ]; then
+                cp ~/.claude-${active}.json ~/.claude.json
+            fi
+            active=$(cat ~/.codex/.active-profile 2>/dev/null || echo "")
+            if [ -n "$active" ] && [ -f ~/.codex/auth-${active}.json ]; then
+                cp ~/.codex/auth-${active}.json ~/.codex/auth.json
+            fi
+        ' 2>/dev/null || true
+
         echo "OK"
     done
     echo "Done."
@@ -172,13 +177,11 @@ if [[ "$ACTION" == "login" ]]; then
     echo "🔑 Logging in $TOOL as $TARGET..."
 
     if [[ "$TOOL" == "claude" ]]; then
-        script -q -e -c "claude setup-token" /dev/null | tee >(
-            grep -m 1 -oE 'https://claude\.com[a-zA-Z0-9./?=&_+-]+' | while read -r url; do
-                printf "\033]52;c;%s\007" "$(printf "%s" "$url" | base64 | tr -d '\n')"
-                [ -x "/mnt/c/Windows/System32/clip.exe" ] && printf "%s" "$url" | /mnt/c/Windows/System32/clip.exe
-                echo -e "\n📋 [Auto-copied URL to your clipboard!]" > /dev/tty
-            done
-        )
+        # Remove credentials to force the full browser OAuth flow (gives user:profile scope).
+        # setup-token is inference-only and won't work with the usage API.
+        rm -f "$CLAUDE_DIR/.credentials.json"
+        echo "Authorize in your browser, then exit the Claude session (Ctrl+D or /exit) to continue."
+        claude
     else
         if [[ "$TARGET" == "hs" ]]; then
             codex login
