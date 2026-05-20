@@ -20,7 +20,7 @@ Personal dotfiles repository for a WSL-based development environment. Manages sh
 # setup_secrets, setup_ai_config, setup_tmux, setup_tmuxinator, setup_wsl
 ```
 
-`setup.sh` installs packages, sets up tools (Node.js 25 via asdf, uv, Codex, Gemini, Claude Code, Oh-My-Zsh, Neovim/packer, TPM), and symlinks dotfiles to `$HOME`.
+`setup.sh` installs packages, sets up tools (Node.js 25 via asdf, uv, Codex, Agy, Claude Code, Oh-My-Zsh, Neovim/packer, TPM), and symlinks dotfiles to `$HOME`.
 
 ## Architecture
 

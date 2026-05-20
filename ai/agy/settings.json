@@ -9,9 +9,34 @@
       "directory": "~/.openclaw/workspace/specs/"
     }
   },
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "Bash(ls:*)",
+      "Bash(cd:*)",
+      "Bash(cat:*)",
+      "Bash(pwd:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(tree:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(npm info:*)",
+      "Bash(npm run dev:*)"
+    ],
+    "ask": [
+      "Bash"
+    ]
+  },
   "security": {
     "auth": {
-      "selectedType": "gemini-api-key"
+      "selectedType": "agy-api-key"
     },
     "folderTrust": {
       "enabled": true
@@ -46,7 +71,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/abacha/.gemini/hooks/rtk-hook-gemini.sh"
+            "command": "/home/abacha/.agy/hooks/rtk-hook-agy.sh"
           }
         ]
       }

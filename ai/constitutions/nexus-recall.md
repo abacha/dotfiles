@@ -4,7 +4,7 @@
 ## Project
 
 Personal memory + retrieval system over imported chats and documents. Hybrid search (FTS5 + FAISS) over
-ingested ChatGPT exports, WhatsApp chats, coding agent sessions (Claude Code, Codex, Gemini CLI, OpenClaw), and local files.
+ingested ChatGPT exports, WhatsApp chats, coding agent sessions (Claude Code, Codex, Agy CLI, OpenClaw), and local files.
 LLM-powered answers with multi-provider fallback (OpenAI, Anthropic, Gemini).
 
 Stack: FastAPI, SQLite (WAL mode + FTS5), FAISS (HNSW), Pydantic v2.
@@ -40,7 +40,7 @@ backend/src/app/
 │     router.py, service.py, realtime.py, distillation.py, tasks.py,
 │     queries.py, queries_groups.py, ingest/, people/, models/, resources/config.yaml
 │
-├── coding_agents/    ← Coding agent session ingest + retrieval domain (Claude Code, Codex, Gemini CLI, OpenClaw).
+├── coding_agents/    ← Coding agent session ingest + retrieval domain (Claude Code, Codex, Agy CLI, OpenClaw).
 │     router.py, service.py, queries.py, distillation.py,
 │     ingest/, models/
 │
@@ -261,7 +261,7 @@ docker compose exec api python -c "import urllib.request; print(urllib.request.u
 ### Ingestion Pipeline
 Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
 
-1. **Ingest** (`aichat/ingest/`, `whatsapp/ingest/`, `documents/ingest/`, `coding_agents/ingest/`): Supports `.zip` (ChatGPT Export), raw `.json`, WhatsApp `.txt`, live WhatsApp transport events, coding agent sessions (Claude Code `.jsonl`, Codex `.jsonl`, Gemini CLI `.json`, OpenClaw `.jsonl`), and Documents (PDF, MD, DOCX, etc). Standardizes roles (`user`, `assistant`, `system`). `tool` role messages are ignored.
+1. **Ingest** (`aichat/ingest/`, `whatsapp/ingest/`, `documents/ingest/`, `coding_agents/ingest/`): Supports `.zip` (ChatGPT Export), raw `.json`, WhatsApp `.txt`, live WhatsApp transport events, coding agent sessions (Claude Code `.jsonl`, Codex `.jsonl`, Agy CLI `.json`, OpenClaw `.jsonl`), and Documents (PDF, MD, DOCX, etc). Standardizes roles (`user`, `assistant`, `system`). `tool` role messages are ignored.
 2. **Clean** (`kernel/cleaner.py`): Every message/chunk passes through the cleaner before being saved. Strips technical JSON, voice metadata, and custom tokens.
 3. **Format (Deferred)** (`documents/ingest/` + `documents/jobs.py`): Uploaded documents are first ingested as raw text. A background job then uses the LLM to format the text into clean Markdown (fixing headers, tables, etc.) for better retrieval quality.
 4. **Tag** (`kernel/tags/classifier.py`): LLM-based classification producing `continuity` (one-off/long-running/recurring), open-ended `topics`, and validated `signals` (planning/review/debugging…). Taxonomy vocabulary is defined in `kernel/resources/taxonomy.yaml`. Project assignment is separate and DB-validated.
@@ -281,7 +281,7 @@ Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
   - `GET /whatsapp/admin/migration-status`
 
 ### Coding Agent Sessions
-- Sessions are scanned from filesystem roots configured via settings (`coding_agents_claude_root`, `coding_agents_codex_root`, `coding_agents_gemini_root`, `coding_agents_openclaw_root`).
+- Sessions are scanned from filesystem roots configured via settings (`coding_agents_claude_root`, `coding_agents_codex_root`, `coding_agents_agy_root`, `coding_agents_openclaw_root`).
 - **Workflow:** Sessions are placed in a **staging queue** upon ingestion with status `pending`. They must be **approved** (manually or via staging API) to be distilled and indexed.
 - **Distillation:** Once approved, a session is distilled into a plain-text summary via LLM (`coding_agents/distillation.py`), then chunked and vectorized for retrieval. Chunks are only visible in search if the session has an assigned `project_id`.
 - Chunks are stored with `source_domain='coding_agents'` and `source_channel='coding_agents:<source>'` (e.g., `coding_agents:claude_code`).

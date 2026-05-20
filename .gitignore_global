@@ -26,11 +26,12 @@ __pycache__/
 # AI agents
 AGENTS.md
 CLAUDE.md
-GEMINI.md
+AGY.md
 .claude/
 .codex/
 .codex
-.gemini/
+.agy/
+.antigravitycli/
 
 # Graphify
 graphify-out/

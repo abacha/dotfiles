@@ -200,7 +200,7 @@ setup_ai() {
   ensure_node
   setup_npm_user_prefix
   npm install -g @openai/codex || true
-  npm install -g @google/gemini-cli || true
+  npm install -g @google/agy-cli || true
 
   local existing_claude_target
   if [ -L "$HOME/.local/bin/claude" ]; then
@@ -215,11 +215,11 @@ setup_ai() {
   fi
 
   # Global AI config symlinks
-  mkdir -p ~/.claude ~/.gemini ~/.codex
+  mkdir -p ~/.claude ~/.agy ~/.codex
   ln -sf ~/dotfiles/ai/claude/settings.json ~/.claude/settings.json
-  ln -sf ~/dotfiles/ai/gemini/settings.json ~/.gemini/settings.json
+  ln -sf ~/dotfiles/ai/agy/settings.json ~/.agy/settings.json
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.claude/CLAUDE.md
-  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.gemini/GEMINI.md
+  ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.agy/AGY.md
   ln -sfn ~/dotfiles/ai/constitutions/global-rules.md ~/.codex/AGENTS.md
 
   # Restore Claude Marketplaces & Plugins

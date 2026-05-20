@@ -1,0 +1,15 @@
+[
+  {
+    "serverName": "figma",
+    "token": {
+      "accessToken": "figu_ymCc98f66vK6A-qQT3yEgRftnD_jwqwdhX31Y9sk",
+      "tokenType": "bearer",
+      "refreshToken": "figur_2kWISMnSRgF97tQAd1pseCtMxLi4NtKgJyCeeTTUfFr23IuQ38db0Q",
+      "expiresAt": 1786386187502
+    },
+    "clientId": "Uz7kbrvZkFdDe4v4YcwDNO",
+    "tokenUrl": "https://api.figma.com/v1/oauth/token",
+    "mcpServerUrl": "https://mcp.figma.com/mcp",
+    "updatedAt": 1778610187503
+  }
+]
