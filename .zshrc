@@ -113,16 +113,16 @@ alias hs-start="hs-local services start --exclude clickhouse && hs-local account
 # <<< Hubstaff <<<
 
 # AI CLI Auth Rotation
-alias claude-hs="~/dotfiles/ai/tooling/ai-cli-switch.sh claude hs"
-alias claude-p="~/dotfiles/ai/tooling/ai-cli-switch.sh claude p"
-alias codex-hs="~/dotfiles/ai/tooling/ai-cli-switch.sh codex hs"
-alias codex-p="~/dotfiles/ai/tooling/ai-cli-switch.sh codex p"
+alias claude-hs="ai-cli-switch claude hs"
+alias claude-p="ai-cli-switch claude p"
+alias codex-hs="ai-cli-switch codex hs"
+alias codex-p="ai-cli-switch codex p"
 
 export EDITOR="nvim"
 alias zb="~/dotfiles/ai/tooling/zb.sh"
 
-# Use containerised wacli
-alias wacli="docker exec -i nexus-recall-wacli-1 wacli"
-
 # zoxide init
 eval "$(zoxide init zsh)"
+
+# Added by Antigravity CLI installer
+export PATH="/home/abacha/.local/bin:$PATH"

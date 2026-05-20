@@ -4,6 +4,7 @@ export PATH="$HOME/.asdf/bin:$PATH"
 export PATH="${ASDF_DATA_DIR}/shims:$PATH"
 export PATH="$HOME/.local/bin:$PATH:/usr/local/sbin:/usr/sbin:/sbin:/snap/bin"
 export PATH="$HOME/.sre-toolkit/bin:$PATH"
+export PATH="$HOME/dotfiles/ai/tooling/:$PATH"
 export PNPM_HOME="$HOME/.local/share/pnpm"
 [[ ":$PATH:" != *":$PNPM_HOME:"* ]] && export PATH="$PNPM_HOME:$PATH"
 export EDITOR=nvim

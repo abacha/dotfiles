@@ -57,22 +57,25 @@ save_current() {
 }
 
 # ── Push to all nodes ──────────────────────────────────────────────────────────
-# Only pushes named backup files. Each node's active profile is preserved by
-# re-deriving .credentials.json from its own .active-profile after the sync.
+# Only pushes named backup files for the current $TOOL. Each node's active
+# credentials are only updated if the incoming backup is newer than what's there.
 push_all() {
     local nodes=(cyber-core forge stargate)
 
     local claude_dir_files=()
     local claude_home_files=()
-    for prof in hs p; do
-        [ -f "$HOME/.claude/.credentials-${prof}.json" ] && claude_dir_files+=("$HOME/.claude/.credentials-${prof}.json")
-        [ -f "$HOME/.claude-${prof}.json" ]              && claude_home_files+=("$HOME/.claude-${prof}.json")
-    done
-
     local codex_files=()
-    for prof in hs p; do
-        [ -f "$HOME/.codex/auth-${prof}.json" ] && codex_files+=("$HOME/.codex/auth-${prof}.json")
-    done
+
+    if [[ "$TOOL" == "claude" ]]; then
+        for prof in hs p; do
+            [ -f "$HOME/.claude/.credentials-${prof}.json" ] && claude_dir_files+=("$HOME/.claude/.credentials-${prof}.json")
+            [ -f "$HOME/.claude-${prof}.json" ]              && claude_home_files+=("$HOME/.claude-${prof}.json")
+        done
+    else
+        for prof in hs p; do
+            [ -f "$HOME/.codex/auth-${prof}.json" ] && codex_files+=("$HOME/.codex/auth-${prof}.json")
+        done
+    fi
 
     echo "Pushing credentials to homelab nodes..."
     local node
@@ -87,18 +90,25 @@ push_all() {
         [ ${#claude_home_files[@]} -gt 0 ] && rsync -az --no-perms "${claude_home_files[@]}" "${node}:~/"
         [ ${#codex_files[@]} -gt 0 ]       && rsync -az --no-perms "${codex_files[@]}"       "${node}:~/.codex/"
 
-        # Re-apply credentials for whichever profile is already active on the remote node
+        # Re-apply active credentials only if the incoming backup is newer than what's active.
+        # This prevents a stale backup from downgrading credentials on a node that logged in locally.
         ssh -o ConnectTimeout=5 "$node" '
             active=$(cat ~/.claude/.active-profile 2>/dev/null || echo "")
             if [ -n "$active" ] && [ -f ~/.claude/.credentials-${active}.json ]; then
-                cp ~/.claude/.credentials-${active}.json ~/.claude/.credentials.json
+                if [ ! -f ~/.claude/.credentials.json ] || [ ~/.claude/.credentials-${active}.json -nt ~/.claude/.credentials.json ]; then
+                    cp ~/.claude/.credentials-${active}.json ~/.claude/.credentials.json
+                fi
             fi
             if [ -n "$active" ] && [ -f ~/.claude-${active}.json ]; then
-                cp ~/.claude-${active}.json ~/.claude.json
+                if [ ! -f ~/.claude.json ] || [ ~/.claude-${active}.json -nt ~/.claude.json ]; then
+                    cp ~/.claude-${active}.json ~/.claude.json
+                fi
             fi
             active=$(cat ~/.codex/.active-profile 2>/dev/null || echo "")
             if [ -n "$active" ] && [ -f ~/.codex/auth-${active}.json ]; then
-                cp ~/.codex/auth-${active}.json ~/.codex/auth.json
+                if [ ! -f ~/.codex/auth.json ] || [ ~/.codex/auth-${active}.json -nt ~/.codex/auth.json ]; then
+                    cp ~/.codex/auth-${active}.json ~/.codex/auth.json
+                fi
             fi
         ' 2>/dev/null || true
 
