@@ -379,6 +379,25 @@ setup_tmuxinator() {
 }
 
 # Function to setup secrets from 1Password
+setup_sync_cron() {
+  local recall_ip="192.168.15.201"
+  if hostname -I 2>/dev/null | grep -qw "$recall_ip"; then
+    echo "Skipping sync cron (this is the recall node)."
+    return 0
+  fi
+
+  local script="$HOME/dotfiles/ai/tooling/sync-ai-sessions.sh"
+  chmod +x "$script"
+
+  local job="*/5 * * * * $script > /dev/null 2>&1"
+  if crontab -l 2>/dev/null | grep -qF "$script"; then
+    echo "Sync cron already installed. Skipping."
+  else
+    (crontab -l 2>/dev/null; echo "$job") | crontab -
+    echo "Installed sync cron: $job"
+  fi
+}
+
 setup_secrets() {
   echo "🔐 Setting up ~/.env from 1Password..."
 
@@ -423,6 +442,7 @@ main() {
   setup_uv
   setup_zsh
   setup_ai
+  setup_sync_cron
   create_symlinks
   setup_secrets
   setup_tmux
@@ -453,11 +473,12 @@ resolve_function() {
     ai) echo "setup_ai" ;;
     zsh) echo "setup_zsh" ;;
     symlinks|links) echo "create_symlinks" ;;
+    sync|sync-cron) echo "setup_sync_cron" ;;
     secrets) echo "setup_secrets" ;;
     tmux) echo "setup_tmux" ;;
     tmuxinator|mux) echo "setup_tmuxinator" ;;
     wsl) echo "setup_wsl" ;;
-    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_ai|setup_zsh|create_symlinks|setup_secrets|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
+    install_basic_packages|install_extra_packages|setup_docker|setup_node|setup_neovim|setup_asdf|setup_ruby|setup_python|setup_uv|setup_ai|setup_sync_cron|setup_zsh|create_symlinks|setup_secrets|setup_tmux|setup_tmuxinator|setup_wsl) echo "$1" ;;
     *) return 1 ;;
   esac
 }
@@ -482,6 +503,7 @@ Dependencies are resolved automatically — e.g. `ruby` installs asdf first if m
   zsh                  Zsh + oh-my-zsh + p10k + zoxide
   tmux                 Tmux + TPM
   tmuxinator, mux      Tmuxinator gem                [needs: ruby]
+  sync, sync-cron      Install AI session sync cron (skipped on recall node)
   symlinks, links      Core dotfile symlinks
   secrets              Pull ~/.env from 1Password
   wsl                  WSL extras (xclip, browser)
