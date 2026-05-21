@@ -7,3 +7,7 @@ fi
 if [ -f "$HOME/.bashrc" ]; then
   source "$HOME/.bashrc"
 fi
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/abacha/.local/bin:$PATH"
