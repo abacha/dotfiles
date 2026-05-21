@@ -281,12 +281,14 @@ Five stages: Ingest → Clean → Format (Document-only) → Tag → Vectorize.
   - `GET /whatsapp/admin/migration-status`
 
 ### Coding Agent Sessions
-- Sessions are scanned from filesystem roots configured via settings (`coding_agents_claude_root`, `coding_agents_codex_root`, `coding_agents_agy_root`, `coding_agents_openclaw_root`).
+- Sessions are scanned from filesystem roots configured via settings (`coding_agents_claude_root`, `coding_agents_codex_root`, `coding_agents_antigravity_root`, `coding_agents_openclaw_root`).
 - **Workflow:** Sessions are placed in a **staging queue** upon ingestion with status `pending`. They must be **approved** (manually or via staging API) to be distilled and indexed.
 - **Distillation:** Once approved, a session is distilled into a plain-text summary via LLM (`coding_agents/distillation.py`), then chunked and vectorized for retrieval. Chunks are only visible in search if the session has an assigned `project_id`.
 - Chunks are stored with `source_domain='coding_agents'` and `source_channel='coding_agents:<source>'` (e.g., `coding_agents:claude_code`).
 - Key routes: `POST /coding-agents/ingest`, `GET /coding-agents/sessions`, `GET /coding-agents/project-staging`, `POST /coding-agents/project-staging/{id}/approve`.
 - Background scanner runs on `coding_agents_scan_interval_seconds` cadence (default 1800 s).
+- **Multi-node sync:** Nexus Recall only reads local filesystem mounts. Sessions from other nodes (forge, cyber-core) are pushed to stargate every 5 min by `~/dotfiles/ai/tooling/sync-ai-sessions.sh`, installed via `setup.sh sync`. Guards against running on stargate (192.168.15.201) to prevent a loop; triggers ingest after each sync.
+- **Antigravity (formerly Gemini CLI):** sessions written to `~/.gemini/antigravity-cli/brain/<uuid>/.system_generated/logs/transcript.jsonl` — path hardcoded by the binary regardless of `~/.agy` migration. Docker mount: `~/.gemini/antigravity-cli:/agent-sessions/antigravity:ro`.
 
 ### Search & Retrieval
 - **Intent-Aware Retrieval:** The system detects if the query is about a person or a general topic and balances the source distribution (WhatsApp vs. Documents vs. AI Chats) accordingly.
