@@ -325,6 +325,9 @@ create_symlinks() {
   ln -sf ~/dotfiles/.gemrc ~/
   ln -sf ~/dotfiles/.tool-versions ~/
   ln -sf ~/dotfiles/.gitignore_global ~/.gitignore
+  ln -sf ~/dotfiles/.shell_env ~/
+  ln -sf ~/dotfiles/.zshenv ~/
+  ln -sf ~/dotfiles/.bash_profile ~/
 }
 
 # Function to setup Tmux

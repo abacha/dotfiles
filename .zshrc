@@ -68,11 +68,8 @@ unsetopt correct_all
 
 ttyctl -f
 
-# Local bin Configuration
-export PATH="$HOME/.local/bin:$PATH"
 
 # asdf Configuration
-export PATH="$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
 if [ -d "${ASDF_DATA_DIR:-$HOME/.asdf}" ]; then
   fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
   source "${ASDF_DATA_DIR:-$HOME/.asdf}/asdf.sh"
@@ -108,7 +105,6 @@ notes() {
 [[ -f /home/abacha/.openclaw/completions/openclaw.zsh ]] && source /home/abacha/.openclaw/completions/openclaw.zsh
 
 # >>> Hubstaff >>>
-export PATH="/home/abacha/.sre-toolkit/bin:$PATH"
 alias hs-start="hs-local services start --exclude clickhouse && hs-local account start && sleep 5 && hs-local server start"
 # <<< Hubstaff <<<
 
@@ -119,14 +115,11 @@ alias claude-t="ai-cli-switch claude t"
 alias codex-hs="ai-cli-switch codex hs"
 alias codex-p="ai-cli-switch codex p"
 
-export EDITOR="nvim"
 alias zb="~/dotfiles/ai/tooling/zb.sh"
 
 # zoxide init
 eval "$(zoxide init zsh)"
 
-# Added by Antigravity CLI installer
-export PATH="/home/abacha/.local/bin:$PATH"
 
 # Fix OpenClaw TUI Encoding
 export LC_ALL=en_US.UTF-8
