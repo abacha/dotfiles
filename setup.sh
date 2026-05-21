@@ -191,6 +191,33 @@ setup_rtk() {
 setup_ai() {
   echo "🤖 Setting up AI tools..."
 
+  # gnome-keyring lets agy/antigravity persist OAuth tokens via the secrets service
+  apt_install_quiet gnome-keyring
+
+  # Bootstrap the default keyring file directly — avoids the GUI prompt that
+  # secretstorage.create_collection() triggers on headless nodes.
+  # The .keyring format is plain text; gnome-keyring appends items to it at runtime.
+  local keyring_dir="$HOME/.local/share/keyrings"
+  mkdir -p "$keyring_dir"
+  if [ ! -f "$keyring_dir/Default.keyring" ]; then
+    cat > "$keyring_dir/Default.keyring" <<'EOF'
+[keyring]
+display-name=Default
+ctime=0
+mtime=0
+lock-on-idle=false
+lock-after=false
+EOF
+    printf 'default' > "$keyring_dir/default"
+    echo "keyring bootstrapped at $keyring_dir/Default.keyring"
+  fi
+
+  if command -v gnome-keyring-daemon &>/dev/null; then
+    if [ ! -S /run/user/$(id -u)/keyring/control ]; then
+      gnome-keyring-daemon --start --daemonize --components=secrets 2>/dev/null
+    fi
+  fi
+
   # Internal tooling
   setup_rtk
   ensure_uv

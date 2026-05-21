@@ -124,3 +124,11 @@ eval "$(zoxide init zsh)"
 # Fix OpenClaw TUI Encoding
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+
+# Start gnome-keyring secrets daemon so agy/antigravity can persist auth tokens.
+# --start and --unlock are incompatible in v40; run as separate invocations.
+if command -v gnome-keyring-daemon &>/dev/null; then
+  if [ ! -S /run/user/$(id -u)/keyring/control ]; then
+    gnome-keyring-daemon --start --daemonize --components=secrets 2>/dev/null
+  fi
+fi
