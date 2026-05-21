@@ -235,6 +235,15 @@ format_cost_value() {
     printf "%.2f" "$value"
 }
 
+get_profile_name() {
+    case "$1" in
+        hs) echo "Hubstaff" ;;
+        p) echo "Personal" ;;
+        t) echo "TRAG" ;;
+        *) echo "$1" ;;
+    esac
+}
+
 check_claude_auth() {
     local creds_file="$1"
     local label="$2"
@@ -258,7 +267,7 @@ check_claude_auth() {
             awk -v repl="   [⏸ ${display_label}] (cached at ${cache_mod})" '
                 BEGIN { done = 0 }
                 {
-                    if (!done && $0 ~ /^   \[▶[[:space:]]/ ) {
+                    if (!done && $0 ~ /^   \[/ ) {
                         print repl
                         done = 1
                         next
@@ -376,44 +385,47 @@ do_check_claude_auth() {
 if [ "$ONLY_CLAUDE" = "1" ]; then
     CLAUDE_SECTION_OUT=$(mktemp)
     {
-        if [ -f "$HOME/.claude/.credentials-hs.json" ] || [ -f "$HOME/.claude/.credentials-p.json" ]; then
+        has_profiles=0
+        for f in "$HOME/.claude/.credentials-"*.json; do
+            [ -e "$f" ] && { has_profiles=1; break; }
+        done
+
+        if [ "$has_profiles" -eq 1 ]; then
             ACTIVE_CLAUDE=$(cat "$HOME/.claude/.active-profile" 2>/dev/null || echo "unknown")
-            if [ "$ACTIVE_CLAUDE" = "hs" ]; then
-                FIRST_PRINTED=0
-                check_claude_auth "$HOME/.claude/.credentials.json" "▶ Hubstaff" 1 "hs" && FIRST_PRINTED=1
-                if [ -f "$HOME/.claude/.credentials-p.json" ]; then
-                    P_OUT=$(mktemp)
-                    if check_claude_auth "$HOME/.claude/.credentials-p.json" "⏸ Personal" 0 "p" > "$P_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$P_OUT"
-                    fi
-                    rm -f "$P_OUT"
+            FIRST_PRINTED=0
+            
+            print_claude_profile() {
+                local profile_key="$1"
+                local profile_name="$2"
+                local is_active="$3"
+                local creds_file="$4"
+                
+                if [ ! -f "$creds_file" ]; then return 0; fi
+                
+                local prefix=""
+                if [ "$is_active" = "1" ]; then prefix="▶ "; else prefix="⏸ "; fi
+                
+                local out_file=$(mktemp)
+                check_claude_auth "$creds_file" "${prefix}${profile_name}" "$is_active" "$profile_key" > "$out_file" || true
+                if [ -s "$out_file" ]; then
+                    [ "$FIRST_PRINTED" = "1" ] && echo ""
+                    cat "$out_file"
+                    FIRST_PRINTED=1
                 fi
-            elif [ "$ACTIVE_CLAUDE" = "p" ]; then
-                FIRST_PRINTED=0
-                check_claude_auth "$HOME/.claude/.credentials.json" "▶ Personal" 1 "p" && FIRST_PRINTED=1
-                if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
-                    HS_OUT=$(mktemp)
-                    if check_claude_auth "$HOME/.claude/.credentials-hs.json" "⏸ Hubstaff" 0 "hs" > "$HS_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$HS_OUT"
-                    fi
-                    rm -f "$HS_OUT"
-                fi
-            else
-                FIRST_PRINTED=0
-                if [ -f "$HOME/.claude/.credentials-hs.json" ]; then
-                    check_claude_auth "$HOME/.claude/.credentials-hs.json" "Hubstaff" 1 "hs" && FIRST_PRINTED=1
-                fi
-                if [ -f "$HOME/.claude/.credentials-p.json" ]; then
-                    P_OUT=$(mktemp)
-                    if check_claude_auth "$HOME/.claude/.credentials-p.json" "Personal" 1 "p" > "$P_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$P_OUT"
-                    fi
-                    rm -f "$P_OUT"
-                fi
+                rm -f "$out_file"
+            }
+
+            if [ "$ACTIVE_CLAUDE" != "unknown" ]; then
+                print_claude_profile "$ACTIVE_CLAUDE" "$(get_profile_name "$ACTIVE_CLAUDE")" 1 "$HOME/.claude/.credentials.json"
             fi
+            
+            for f in "$HOME/.claude/.credentials-"*.json; do
+                [ -e "$f" ] || continue
+                profile_key=$(basename "$f" | sed 's/\.credentials-//;s/\.json//')
+                if [ "$profile_key" != "$ACTIVE_CLAUDE" ]; then
+                    print_claude_profile "$profile_key" "$(get_profile_name "$profile_key")" 0 "$f"
+                fi
+            done
         else
             if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
                 ACCESS_TOKEN="$CLAUDE_CODE_OAUTH_TOKEN"
@@ -483,7 +495,7 @@ check_codex_auth() {
             awk -v repl="   [⏸ ${display_label}] (cached at ${cache_mod})" '
                 BEGIN { done = 0 }
                 {
-                    if (!done && $0 ~ /^   \[▶[[:space:]]/ ) {
+                    if (!done && $0 ~ /^   \[/ ) {
                         print repl
                         done = 1
                         next
@@ -589,44 +601,47 @@ do_check_codex_auth() {
 if [ "$ONLY_CODEX" = "1" ]; then
     CODEX_SECTION_OUT=$(mktemp)
     {
-        if [ -f "$HOME/.codex/auth-hs.json" ] || [ -f "$HOME/.codex/auth-p.json" ]; then
+        has_profiles=0
+        for f in "$HOME/.codex/auth-"*.json; do
+            [ -e "$f" ] && { has_profiles=1; break; }
+        done
+
+        if [ "$has_profiles" -eq 1 ]; then
             ACTIVE_CODEX=$(cat "$HOME/.codex/.active-profile" 2>/dev/null || echo "unknown")
-            if [ "$ACTIVE_CODEX" = "hs" ]; then
-                FIRST_PRINTED=0
-                check_codex_auth "$HOME/.codex/auth.json" "▶ Hubstaff" 1 "hs" && FIRST_PRINTED=1
-                if [ -f "$HOME/.codex/auth-p.json" ]; then
-                    P_OUT=$(mktemp)
-                    if check_codex_auth "$HOME/.codex/auth-p.json" "⏸ Personal" 0 "p" > "$P_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$P_OUT"
-                    fi
-                    rm -f "$P_OUT"
+            FIRST_PRINTED=0
+            
+            print_codex_profile() {
+                local profile_key="$1"
+                local profile_name="$2"
+                local is_active="$3"
+                local auth_file="$4"
+                
+                if [ ! -f "$auth_file" ]; then return 0; fi
+                
+                local prefix=""
+                if [ "$is_active" = "1" ]; then prefix="▶ "; else prefix="⏸ "; fi
+                
+                local out_file=$(mktemp)
+                check_codex_auth "$auth_file" "${prefix}${profile_name}" "$is_active" "$profile_key" > "$out_file" || true
+                if [ -s "$out_file" ]; then
+                    [ "$FIRST_PRINTED" = "1" ] && echo ""
+                    cat "$out_file"
+                    FIRST_PRINTED=1
                 fi
-            elif [ "$ACTIVE_CODEX" = "p" ]; then
-                FIRST_PRINTED=0
-                check_codex_auth "$HOME/.codex/auth.json" "▶ Personal" 1 "p" && FIRST_PRINTED=1
-                if [ -f "$HOME/.codex/auth-hs.json" ]; then
-                    HS_OUT=$(mktemp)
-                    if check_codex_auth "$HOME/.codex/auth-hs.json" "⏸ Hubstaff" 0 "hs" > "$HS_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$HS_OUT"
-                    fi
-                    rm -f "$HS_OUT"
-                fi
-            else
-                FIRST_PRINTED=0
-                if [ -f "$HOME/.codex/auth-hs.json" ]; then
-                    check_codex_auth "$HOME/.codex/auth-hs.json" "Hubstaff" 1 "hs" && FIRST_PRINTED=1
-                fi
-                if [ -f "$HOME/.codex/auth-p.json" ]; then
-                    P_OUT=$(mktemp)
-                    if check_codex_auth "$HOME/.codex/auth-p.json" "Personal" 1 "p" > "$P_OUT"; then
-                        [ "$FIRST_PRINTED" = "1" ] && echo ""
-                        cat "$P_OUT"
-                    fi
-                    rm -f "$P_OUT"
-                fi
+                rm -f "$out_file"
+            }
+
+            if [ "$ACTIVE_CODEX" != "unknown" ]; then
+                print_codex_profile "$ACTIVE_CODEX" "$(get_profile_name "$ACTIVE_CODEX")" 1 "$HOME/.codex/auth.json"
             fi
+            
+            for f in "$HOME/.codex/auth-"*.json; do
+                [ -e "$f" ] || continue
+                profile_key=$(basename "$f" | sed 's/auth-//;s/\.json//')
+                if [ "$profile_key" != "$ACTIVE_CODEX" ]; then
+                    print_codex_profile "$profile_key" "$(get_profile_name "$profile_key")" 0 "$f"
+                fi
+            done
         else
             if [ -f "$HOME/.codex/auth.json" ]; then
                 check_codex_auth "$HOME/.codex/auth.json" "Active"
