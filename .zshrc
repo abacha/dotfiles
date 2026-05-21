@@ -115,6 +115,7 @@ alias hs-start="hs-local services start --exclude clickhouse && hs-local account
 # AI CLI Auth Rotation
 alias claude-hs="ai-cli-switch claude hs"
 alias claude-p="ai-cli-switch claude p"
+alias claude-t="ai-cli-switch claude t"
 alias codex-hs="ai-cli-switch codex hs"
 alias codex-p="ai-cli-switch codex p"
 

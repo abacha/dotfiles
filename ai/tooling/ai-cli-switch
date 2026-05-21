@@ -20,8 +20,8 @@ for arg in "$@"; do
 done
 
 if [[ "$TOOL" != "claude" && "$TOOL" != "codex" ]] || \
-   [[ "$TARGET" != "hs" && "$TARGET" != "p" ]]; then
-    echo "Usage: ai-cli-switch <claude|codex> <hs|p> [login|backup] [--push]"
+   [[ "$TARGET" != "hs" && "$TARGET" != "p" && "$TARGET" != "t" ]]; then
+    echo "Usage: ai-cli-switch <claude|codex> <hs|p|t> [login|backup] [--push]"
     exit 1
 fi
 
@@ -67,7 +67,7 @@ push_all() {
     local codex_files=()
 
     if [[ "$TOOL" == "claude" ]]; then
-        for prof in hs p; do
+        for prof in hs p t; do
             [ -f "$HOME/.claude/.credentials-${prof}.json" ] && claude_dir_files+=("$HOME/.claude/.credentials-${prof}.json")
             [ -f "$HOME/.claude-${prof}.json" ]              && claude_home_files+=("$HOME/.claude-${prof}.json")
         done
