@@ -132,5 +132,3 @@ if command -v gnome-keyring-daemon &>/dev/null; then
     gnome-keyring-daemon --start --daemonize --components=secrets 2>/dev/null
   fi
 fi
-
-export PATH="/home/abacha/.local/bin:$PATH"
