@@ -11,6 +11,7 @@
   },
   "permissions": {
     "allow": [
+      "Bash",
       "Read",
       "Glob",
       "Grep",
@@ -31,7 +32,10 @@
       "Bash(npm run dev:*)"
     ],
     "ask": [
-      "Bash"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(rm:*)"
     ]
   },
   "security": {
